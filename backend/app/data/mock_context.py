@@ -1,0 +1,41 @@
+MOCK_TRAVEL_CONTEXT = {
+    "rocky_mountains": {
+        "region": "Rocky Mountains",
+        "notes": [
+            "Timed-entry reservations may be required for popular national park corridors.",
+            "High-altitude weather can change quickly, even in summer.",
+            "Short scenic walks near alpine lakes are useful for low-driving photography itineraries.",
+            "Dark-sky opportunities improve when lodging is away from dense town centers.",
+        ],
+        "places": [
+            "Estes Park",
+            "Bear Lake",
+            "Trail Ridge Road",
+            "Moraine Park",
+            "Lily Lake",
+        ],
+    },
+    "amsterdam": {
+        "region": "Amsterdam",
+        "notes": [
+            "Bike and tram logistics matter more than car routing in the city center.",
+            "Museum reservations should be planned ahead during peak travel periods.",
+            "Canal neighborhoods are strong for walking-heavy, low-car itineraries.",
+        ],
+        "places": [
+            "Jordaan",
+            "Rijksmuseum",
+            "Vondelpark",
+            "De Pijp",
+            "Amsterdam Noord",
+        ],
+    },
+}
+
+
+def get_mock_context(query: str) -> dict:
+    normalized_query = query.lower()
+    if "amsterdam" in normalized_query:
+        return MOCK_TRAVEL_CONTEXT["amsterdam"]
+    return MOCK_TRAVEL_CONTEXT["rocky_mountains"]
+
