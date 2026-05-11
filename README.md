@@ -95,3 +95,33 @@ cd backend
 source .venv/bin/activate
 pytest
 ```
+
+## Frontend Quickstart
+
+The frontend is a Vite + React + Tailwind app in `frontend/`.
+
+You need Node.js and npm installed first.
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5173
+```
+
+The frontend expects the backend to be running at:
+
+```text
+http://127.0.0.1:8000
+```
+
+To point the frontend at a different backend URL, create `frontend/.env`:
+
+```bash
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
