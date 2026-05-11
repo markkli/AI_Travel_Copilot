@@ -13,6 +13,12 @@ class UserPreferences(BaseModel):
     avoid: list[str] = Field(default_factory=list, examples=[["long drives", "crowds"]])
     accessibility_notes: str | None = None
 
+class TripIntent(BaseModel):
+    destination_region: str
+    inferred_duration_days: int = Field(ge=1)
+    travel_styles: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
+    interests: list[str] = Field(default_factory=list)
 
 class GenerateTripRequest(BaseModel):
     query: str = Field(

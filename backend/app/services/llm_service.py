@@ -35,7 +35,11 @@ class LLMService:
         destination_region = self._infer_destination_region(request.query)
         origin = request.origin_location or "Flexible origin"
         budget = request.budget_level or BudgetLevel.MEDIUM
-        travel_style = request.user_preferences.travel_styles or ["scenic", "nature", "structured"]
+        travel_style = request.user_preferences.travel_styles or [
+            "scenic", 
+            "nature", 
+            "structured",
+            "logistics-aware"]
         trip_length = (request.end_date - request.start_date).days + 1
 
         days = []
