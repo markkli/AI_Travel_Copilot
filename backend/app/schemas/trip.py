@@ -1,7 +1,5 @@
 from datetime import date
-
 from pydantic import BaseModel, Field, model_validator
-
 from app.schemas.common import BudgetLevel, SegmentType
 
 
@@ -67,6 +65,15 @@ class TripDay(BaseModel):
     summary: str
     segments: list[ItinerarySegment] = Field(min_length=1)
 
+    @model_validator(mode="after")
+    def validate_segment_sequence(self) -> "TripDay":
+        sequence_numbers = [segment.sequence for segment in self.segments]
+
+        expected_sequence = list(range(1, len(sequence_numbers) + 1))
+        if sequence_numbers != expected_sequence:
+            raise ValueError(f"Segment sequence must be in order: {expected_sequence}")
+        return self
+
 
 class TripPlan(BaseModel):
     trip_title: str
@@ -86,4 +93,3 @@ class RefineTripRequest(BaseModel):
         min_length=3,
         examples=["Make this less driving-heavy and add more underrated trails."],
     )
-
