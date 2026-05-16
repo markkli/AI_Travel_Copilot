@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from app.schemas.common import BudgetLevel, SegmentType
-from app.schemas.trip import GenerateTripRequest, TripPlan
+from app.schemas.trip import GenerateTripRequest, TripIntent, TripPlan
 
 
 class LLMService:
@@ -13,6 +13,23 @@ class LLMService:
 
     def generate_structured_trip(self, request: GenerateTripRequest, prompt: str) -> TripPlan:
         return self._mock_trip_plan(request)
+    
+    def parse_trip_intent(self, request: GenerateTripRequest) -> TripIntent:
+        trip_length = (request.end_date - request.start_date).days + 1
+
+        return TripIntent(
+            destination_region=self._infer_destination_region(request.query),
+            inferred_duration_days=trip_length,
+            travel_styles=request.user_preferences.travel_styles or [
+                "scenic",
+                "nature",
+                "structured",
+                "logistics-aware",
+            ],
+            constraints=request.user_preferences.avoid,
+            interests=request.user_preferences.interests,
+        )
+
 
     def refine_structured_trip(self, existing_plan: TripPlan, user_feedback: str, prompt: str) -> TripPlan:
         refined_plan = existing_plan.model_copy(deep=True)
