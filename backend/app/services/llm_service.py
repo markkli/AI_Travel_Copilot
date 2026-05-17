@@ -13,7 +13,7 @@ class LLMService:
 
     def generate_structured_trip(self, request: GenerateTripRequest, prompt: str) -> TripPlan:
         return self._mock_trip_plan(request)
-    
+
     def parse_trip_intent(self, request: GenerateTripRequest) -> TripIntent:
         trip_length = (request.end_date - request.start_date).days + 1
 
@@ -29,7 +29,6 @@ class LLMService:
             constraints=request.user_preferences.avoid,
             interests=request.user_preferences.interests,
         )
-
 
     def refine_structured_trip(self, existing_plan: TripPlan, user_feedback: str, prompt: str) -> TripPlan:
         refined_plan = existing_plan.model_copy(deep=True)
@@ -49,15 +48,12 @@ class LLMService:
         return TripPlan.model_validate(refined_plan.model_dump())
 
     def _mock_trip_plan(self, request: GenerateTripRequest) -> TripPlan:
-        destination_region = self._infer_destination_region(request.query)
+        intent = self.parse_trip_intent(request)
+        destination_region = intent.destination_region
         origin = request.origin_location or "Flexible origin"
         budget = request.budget_level or BudgetLevel.MEDIUM
-        travel_style = request.user_preferences.travel_styles or [
-            "scenic", 
-            "nature", 
-            "structured",
-            "logistics-aware"]
-        trip_length = (request.end_date - request.start_date).days + 1
+        travel_style = intent.travel_styles
+        trip_length = intent.inferred_duration_days
 
         days = []
         for index in range(trip_length):
@@ -220,4 +216,3 @@ class LLMService:
         if "rocky" in normalized_query or "mountain" in normalized_query:
             return "Rocky Mountains"
         return "Custom Destination"
-
