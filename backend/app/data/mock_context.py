@@ -30,6 +30,21 @@ MOCK_TRAVEL_CONTEXT = {
             "Amsterdam Noord",
         ],
     },
+    "grand_teton": {
+        "region": "Grand Teton National Park",
+        "notes": [
+            "Wildlife viewing is best early in the morning or late in the evening.",
+            "Be prepared for sudden weather changes, especially at higher elevations.",
+            "Scenic drives can be combined with short hikes for a fuller experience.",
+        ],
+        "places": [
+            "Jenny Lake",
+            "Jackson Hole",
+            "Teton Village",
+            "Signal Mountain",
+            "Oxbow Bend",
+        ],
+    }
 }
 
 
@@ -37,5 +52,7 @@ def get_mock_context(query: str) -> dict:
     normalized_query = query.lower()
     if "amsterdam" in normalized_query:
         return MOCK_TRAVEL_CONTEXT["amsterdam"]
+    elif "teton" in normalized_query:
+        return MOCK_TRAVEL_CONTEXT["grand_teton"]
     return MOCK_TRAVEL_CONTEXT["rocky_mountains"]
 
