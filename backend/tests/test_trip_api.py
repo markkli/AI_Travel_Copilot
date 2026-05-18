@@ -39,3 +39,51 @@ def test_recommendations_return_lightweight_cards() -> None:
     assert "duration_days" in data[0]
     assert "days" not in data[0]
 
+
+def test_generate_trip_supports_grand_teton_query() -> None:
+    response = client.post(
+        "/trip/generate",
+        json={
+            "query": "I want a 4-day Grand Teton photography trip with wildlife and scenic viewpoints",
+            "start_date": "2026-08-01",
+            "end_date": "2026-08-04",
+            "origin_location": "Jackson, WY",
+            "budget_level": "medium",
+            "user_preferences": {
+                "travel_styles": ["photography", "wildlife", "scenic"],
+                "interests": ["Jenny Lake", "Oxbow Bend", "sunrise viewpoints"],
+                "avoid": ["long drives"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["destination_region"] == "Grand Teton National Park"
+    assert len(data["days"]) == 4
+    assert data["origin_location"] == "Jackson, WY"
+
+
+def test_parse_trip_intent_endpoint_returns_structured_intent() -> None:
+    response = client.post(
+        "/trip/intent",
+        json={
+            "query": "I want a 4-day Grand Teton photography trip with wildlife and scenic viewpoints",
+            "start_date": "2026-08-01",
+            "end_date": "2026-08-04",
+            "origin_location": "Jackson, WY",
+            "budget_level": "medium",
+            "user_preferences": {
+                "travel_styles": ["photography", "wildlife", "scenic"],
+                "interests": ["Jenny Lake", "Oxbow Bend", "sunrise viewpoints"],
+                "avoid": ["long drives"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["destination_region"] == "Grand Teton National Park"
+    assert data["inferred_duration_days"] == 4
+    assert data["travel_styles"] == ["photography", "wildlife", "scenic"]
+    assert data["constraints"] == ["long drives"]

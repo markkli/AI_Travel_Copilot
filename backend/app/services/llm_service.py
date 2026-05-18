@@ -215,4 +215,6 @@ class LLMService:
             return "Amsterdam"
         if "rocky" in normalized_query or "mountain" in normalized_query:
             return "Rocky Mountains"
+        if "teton" in normalized_query:
+            return "Grand Teton National Park"
         return "Custom Destination"
