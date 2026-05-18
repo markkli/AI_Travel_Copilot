@@ -3,6 +3,8 @@ from datetime import timedelta
 from app.schemas.common import BudgetLevel, SegmentType
 from app.schemas.trip import GenerateTripRequest, TripIntent, TripPlan
 
+model_name = "gpt-5-mini"
+
 
 class LLMService:
     """Small boundary around itinerary generation.
@@ -12,6 +14,8 @@ class LLMService:
     """
 
     def generate_structured_trip(self, request: GenerateTripRequest, prompt: str) -> TripPlan:
+        if self.settings.llm_mode == "openai":
+            return self._generate_with_openai(prompt)
         return self._mock_trip_plan(request)
 
     def parse_trip_intent(self, request: GenerateTripRequest) -> TripIntent:
@@ -46,6 +50,9 @@ class LLMService:
                     segment.constraints_satisfied.append("refined preference")
 
         return TripPlan.model_validate(refined_plan.model_dump())
+
+    def _generate_with_openai(self, prompt: str) -> TripPlan:
+        
 
     def _mock_trip_plan(self, request: GenerateTripRequest) -> TripPlan:
         intent = self.parse_trip_intent(request)
