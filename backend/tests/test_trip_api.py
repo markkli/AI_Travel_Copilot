@@ -94,3 +94,19 @@ def test_parse_trip_intent_endpoint_returns_structured_intent() -> None:
     assert data["inferred_duration_days"] == 4
     assert data["travel_styles"] == ["photography", "wildlife", "scenic"]
     assert data["constraints"] == ["long drives"]
+
+def test_normalize_trip_endpoint_fills_missing_defaults() -> None:
+    response = client.post(
+        "/trip/normalize",
+        json={
+            "query": "I want a scenic Alaska trip with low driving and good photography."
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["query"] == "I want a scenic Alaska trip with low driving and good photography."
+    assert data["budget_level"] == "medium"
+    assert data["origin_location"] is None
+    assert data["start_date"] is not None
+    assert data["end_date"] is not None

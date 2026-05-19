@@ -1,5 +1,5 @@
 from app.prompts.itinerary_prompt import build_itinerary_prompt, build_refinement_prompt
-from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripIntent, TripPlan
+from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripDraftRequest, TripIntent, TripPlan
 from app.services.llm_service import LLMService
 from app.services.retrieval_service import RetrievalService
 
@@ -12,6 +12,9 @@ class TripService:
     ) -> None:
         self.llm_service = llm_service or LLMService()
         self.retrieval_service = retrieval_service or RetrievalService()
+
+    def normalize_trip_request(self, draft: TripDraftRequest) -> GenerateTripRequest:
+        return self.llm_service.normalize_trip_request(draft)
 
     def parse_trip_intent(self, request: GenerateTripRequest) -> TripIntent:
         return self.llm_service.parse_trip_intent(request)

@@ -1,11 +1,13 @@
 from fastapi import APIRouter
-
-from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripIntent, TripPlan
+from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripDraftRequest, TripIntent, TripPlan
 from app.services.trip_service import TripService
 
 router = APIRouter(prefix="/trip", tags=["trip"])
 trip_service = TripService()
 
+@router.post("/normalize", response_model=GenerateTripRequest)
+def normalize_trip_request(request: TripDraftRequest) -> GenerateTripRequest:
+    return trip_service.normalize_trip_request(request)
 
 @router.post("/intent", response_model=TripIntent)
 def parse_trip_intent(request: GenerateTripRequest) -> TripIntent:
