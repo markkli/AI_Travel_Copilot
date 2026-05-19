@@ -1,9 +1,8 @@
 from datetime import timedelta
 
+from app.core.config import Settings, get_settings
 from app.schemas.common import BudgetLevel, SegmentType
 from app.schemas.trip import GenerateTripRequest, TripIntent, TripPlan
-
-model_name = "gpt-5-mini"
 
 
 class LLMService:
@@ -12,6 +11,9 @@ class LLMService:
     The MVP returns deterministic mock data so the API can run with no paid LLM calls.
     Later, this class can dispatch to OpenAI or another provider and validate the JSON.
     """
+
+    def __init__(self, settings: Settings | None = None) -> None:
+        self.settings = settings or get_settings()
 
     def generate_structured_trip(self, request: GenerateTripRequest, prompt: str) -> TripPlan:
         if self.settings.llm_mode == "openai":
@@ -52,7 +54,32 @@ class LLMService:
         return TripPlan.model_validate(refined_plan.model_dump())
 
     def _generate_with_openai(self, prompt: str) -> TripPlan:
-        
+        if not self.settings.openai_api_key:
+            raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
+
+        from openai import OpenAI
+
+        client = OpenAI(api_key=self.settings.openai_api_key)
+        completion = client.beta.chat.completions.parse(
+            model=self.settings.openai_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a travel-planning engine. Return a complete, logistics-aware "
+                        "itinerary that matches the TripPlan schema exactly."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            response_format=TripPlan,
+        )
+
+        parsed_plan = completion.choices[0].message.parsed
+        if parsed_plan is None:
+            raise ValueError("OpenAI response did not contain a parsed TripPlan")
+
+        return TripPlan.model_validate(parsed_plan.model_dump())
 
     def _mock_trip_plan(self, request: GenerateTripRequest) -> TripPlan:
         intent = self.parse_trip_intent(request)
@@ -220,8 +247,8 @@ class LLMService:
         normalized_query = query.lower()
         if "amsterdam" in normalized_query:
             return "Amsterdam"
-        if "rocky" in normalized_query or "mountain" in normalized_query:
-            return "Rocky Mountains"
         if "teton" in normalized_query:
             return "Grand Teton National Park"
+        if "rocky" in normalized_query or "mountain" in normalized_query:
+            return "Rocky Mountains"
         return "Custom Destination"

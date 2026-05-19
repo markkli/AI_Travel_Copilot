@@ -10,9 +10,9 @@ class Settings(BaseSettings):
     app_env: str = "local"
     llm_mode: Literal["mock", "openai"] = "mock"
     openai_api_key: str | None = None
+    openai_model: str = "gpt-4.1-mini"
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

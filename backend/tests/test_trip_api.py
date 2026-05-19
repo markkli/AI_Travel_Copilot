@@ -1,7 +1,14 @@
+import os
+
 from fastapi.testclient import TestClient
 
-from app.main import app
+os.environ["LLM_MODE"] = "mock"
 
+from app.core.config import get_settings
+
+get_settings.cache_clear()
+
+from app.main import app
 
 client = TestClient(app)
 
