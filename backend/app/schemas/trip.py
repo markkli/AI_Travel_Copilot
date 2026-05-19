@@ -13,6 +13,17 @@ class UserPreferences(BaseModel):
     avoid: list[str] = Field(default_factory=list, examples=[["long drives", "crowds"]])
     accessibility_notes: str | None = None
 
+class TripDraftRequest(BaseModel):
+    query: str = Field(
+        min_length=3,
+        examples=["I want a 7-day trip in the Rocky Mountains."],
+    )
+    start_date: date | None = None
+    end_date: date | None = None
+    origin_location: str | None = None
+    budget_level: BudgetLevel | None = None
+    user_preferences: UserPreferences = Field(default_factory=UserPreferences)
+
 class TripIntent(BaseModel):
     destination_region: str
     inferred_duration_days: int = Field(ge=1)
