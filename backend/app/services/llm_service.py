@@ -1,8 +1,7 @@
-from datetime import timedelta
-
+from datetime import timedelta, date
 from app.core.config import Settings, get_settings
 from app.schemas.common import BudgetLevel, SegmentType
-from app.schemas.trip import GenerateTripRequest, TripIntent, TripPlan
+from app.schemas.trip import GenerateTripRequest, TripDraftRequest, TripIntent, TripPlan
 
 
 class LLMService:
@@ -14,6 +13,19 @@ class LLMService:
 
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or get_settings()
+
+    def normalize_trip_request(self, draft: TripDraftRequest) -> GenerateTripRequest:
+        start_date = draft.start_date or (date.today() + timedelta(days=30))
+        end_date = draft.end_date or (start_date + timedelta(days=6))
+
+        return GenerateTripRequest(
+            query=draft.query,
+            start_date=start_date,
+            end_date=end_date,
+            origin_location=draft.origin_location,
+            budget_level=draft.budget_level or BudgetLevel.MEDIUM,
+            user_preferences=draft.user_preferences,
+        )
 
     def generate_structured_trip(self, request: GenerateTripRequest, prompt: str) -> TripPlan:
         if self.settings.llm_mode == "openai":
