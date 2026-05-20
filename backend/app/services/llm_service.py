@@ -1,4 +1,4 @@
-from datetime import timedelta, date
+from datetime import date, timedelta
 from app.core.config import Settings, get_settings
 from app.schemas.common import BudgetLevel, SegmentType
 from app.schemas.trip import GenerateTripRequest, TripDraftRequest, TripIntent, TripPlan
@@ -15,6 +15,43 @@ class LLMService:
         self.settings = settings or get_settings()
 
     def normalize_trip_request(self, draft: TripDraftRequest) -> GenerateTripRequest:
+        if self.settings.llm_mode == "openai":
+            return self._normalize_with_openai(draft)
+
+        return self._normalize_with_rules(draft)
+
+    def _normalize_with_openai(self, draft: TripDraftRequest) -> GenerateTripRequest:
+        if not self.settings.openai_api_key:
+            raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
+
+        from openai import OpenAI
+
+        client = OpenAI(api_key=self.settings.openai_api_key)
+        completion = client.beta.chat.completions.parse(
+            model=self.settings.openai_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a travel request normalization agent. Convert vague travel input "
+                        "into a complete GenerateTripRequest JSON object. Use the current date "
+                        f"{date.today().isoformat()} to infer relative dates. If dates are missing, "
+                        "default to a trip starting about 30 days from today and lasting 7 days. "
+                        "If budget is missing, use medium. Preserve explicit user-provided fields."
+                    ),
+                },
+                {"role": "user", "content": draft.model_dump_json()},
+            ],
+            response_format=GenerateTripRequest,
+        )
+
+        parsed_request = completion.choices[0].message.parsed
+        if parsed_request is None:
+            raise ValueError("OpenAI response did not contain a parsed GenerateTripRequest")
+
+        return GenerateTripRequest.model_validate(parsed_request.model_dump())
+
+    def _normalize_with_rules(self, draft: TripDraftRequest) -> GenerateTripRequest:
         start_date = draft.start_date or (date.today() + timedelta(days=30))
         end_date = draft.end_date or (start_date + timedelta(days=6))
 
