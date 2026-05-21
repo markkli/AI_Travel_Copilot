@@ -9,6 +9,7 @@ trip_service = TripService()
 def normalize_trip_request(request: TripDraftRequest) -> GenerateTripRequest:
     return trip_service.normalize_trip_request(request)
 
+
 @router.post("/intent", response_model=TripIntent)
 def parse_trip_intent(request: GenerateTripRequest) -> TripIntent:
     return trip_service.parse_trip_intent(request)
@@ -17,6 +18,11 @@ def parse_trip_intent(request: GenerateTripRequest) -> TripIntent:
 @router.post("/generate", response_model=TripPlan)
 def generate_trip(request: GenerateTripRequest) -> TripPlan:
     return trip_service.generate_trip(request)
+
+
+@router.post("/generate-from-draft", response_model=TripPlan)
+def generate_trip_from_draft(request: TripDraftRequest) -> TripPlan:
+    return trip_service.generate_trip_from_draft(request)
 
 
 @router.post("/refine", response_model=TripPlan)

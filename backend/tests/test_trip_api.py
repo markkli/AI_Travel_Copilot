@@ -110,3 +110,18 @@ def test_normalize_trip_endpoint_fills_missing_defaults() -> None:
     assert data["origin_location"] is None
     assert data["start_date"] is not None
     assert data["end_date"] is not None
+
+def test_generate_trip_from_draft_endpoint_returns_itinerary() -> None:
+    response = client.post(
+        "/trip/generate-from-draft",
+        json={
+            "query": "I want a scenic Rocky Mountains trip with low driving and photography."
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["destination_region"] == "Rocky Mountains"
+    assert data["budget_level"] == "medium"
+    assert len(data["days"]) == 7
+    assert len(data["days"][0]["segments"]) > 1
