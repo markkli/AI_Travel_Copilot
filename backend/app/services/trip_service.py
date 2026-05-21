@@ -25,6 +25,10 @@ class TripService:
         prompt = build_itinerary_prompt(request, context)
         return self.llm_service.generate_structured_trip(request, prompt)
 
+    def generate_trip_from_draft(self, draft: TripDraftRequest) -> TripPlan:
+        request = self.normalize_trip_request(draft)
+        return self.generate_trip(request)
+        
     def refine_trip(self, request: RefineTripRequest) -> TripPlan:
         prompt = build_refinement_prompt(request.existing_itinerary, request.user_feedback)
         return self.llm_service.refine_structured_trip(
