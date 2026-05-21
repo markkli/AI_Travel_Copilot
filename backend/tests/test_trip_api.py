@@ -111,6 +111,7 @@ def test_normalize_trip_endpoint_fills_missing_defaults() -> None:
     assert data["start_date"] is not None
     assert data["end_date"] is not None
 
+
 def test_generate_trip_from_draft_endpoint_returns_itinerary() -> None:
     response = client.post(
         "/trip/generate-from-draft",

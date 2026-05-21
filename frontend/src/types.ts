@@ -29,6 +29,15 @@ export type GenerateTripRequest = {
   user_preferences: UserPreferences;
 };
 
+export type TripDraftRequest = {
+  query: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  origin_location?: string | null;
+  budget_level?: BudgetLevel | null;
+  user_preferences: UserPreferences;
+};
+
 export type ItinerarySegment = {
   sequence: number;
   segment_type: SegmentType;
@@ -84,4 +93,3 @@ export type RecommendationCard = {
   best_season?: string | null;
   preview_image_query?: string | null;
 };
-

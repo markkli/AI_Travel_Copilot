@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { fetchRecommendations, generateTrip, refineTrip } from "./api";
+import { fetchRecommendations, generateTripFromDraft, refineTrip } from "./api";
 import ItineraryTimeline from "./components/ItineraryTimeline";
 import RecommendationCards from "./components/RecommendationCards";
 import RefinementBox from "./components/RefinementBox";
 import SearchPanel from "./components/SearchPanel";
-import type { GenerateTripRequest, RecommendationCard, TripPlan } from "./types";
+import type { RecommendationCard, TripDraftRequest, TripPlan } from "./types";
 
 export default function App() {
   const [recommendations, setRecommendations] = useState<RecommendationCard[]>([]);
@@ -21,11 +21,11 @@ export default function App() {
       .catch((requestError) => setError(requestError.message));
   }, []);
 
-  async function handleGenerate(payload: GenerateTripRequest) {
+  async function handleGenerate(payload: TripDraftRequest) {
     setIsGenerating(true);
     setError(null);
     try {
-      const generatedTrip = await generateTrip(payload);
+      const generatedTrip = await generateTripFromDraft(payload);
       setTrip(generatedTrip);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Trip generation failed.");
@@ -89,4 +89,3 @@ export default function App() {
     </main>
   );
 }
-

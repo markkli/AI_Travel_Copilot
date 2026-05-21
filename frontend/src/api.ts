@@ -1,4 +1,4 @@
-import type { GenerateTripRequest, RecommendationCard, TripPlan } from "./types";
+import type { GenerateTripRequest, RecommendationCard, TripDraftRequest, TripPlan } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
@@ -30,6 +30,13 @@ export function generateTrip(payload: GenerateTripRequest): Promise<TripPlan> {
   });
 }
 
+export function generateTripFromDraft(payload: TripDraftRequest): Promise<TripPlan> {
+  return requestJson<TripPlan>("/trip/generate-from-draft", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function refineTrip(existingItinerary: TripPlan, userFeedback: string): Promise<TripPlan> {
   return requestJson<TripPlan>("/trip/refine", {
     method: "POST",
@@ -39,4 +46,3 @@ export function refineTrip(existingItinerary: TripPlan, userFeedback: string): P
     }),
   });
 }
-

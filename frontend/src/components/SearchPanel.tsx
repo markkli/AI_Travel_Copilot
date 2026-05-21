@@ -1,20 +1,12 @@
 import type { FormEvent } from "react";
 
-import type { BudgetLevel, GenerateTripRequest, RecommendationCard } from "../types";
+import type { BudgetLevel, RecommendationCard, TripDraftRequest } from "../types";
 
 type SearchPanelProps = {
   isLoading: boolean;
   selectedRecommendation: RecommendationCard | null;
-  onSubmit: (payload: GenerateTripRequest) => void;
+  onSubmit: (payload: TripDraftRequest) => void;
 };
-
-const today = new Date();
-const defaultStartDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30)
-  .toISOString()
-  .slice(0, 10);
-const defaultEndDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 33)
-  .toISOString()
-  .slice(0, 10);
 
 export default function SearchPanel({
   isLoading,
@@ -42,10 +34,10 @@ export default function SearchPanel({
 
     onSubmit({
       query: String(form.get("query") ?? ""),
-      start_date: String(form.get("start_date") ?? ""),
-      end_date: String(form.get("end_date") ?? ""),
+      start_date: String(form.get("start_date") ?? "") || null,
+      end_date: String(form.get("end_date") ?? "") || null,
       origin_location: String(form.get("origin_location") ?? "") || null,
-      budget_level: String(form.get("budget_level") ?? "medium") as BudgetLevel,
+      budget_level: (String(form.get("budget_level") ?? "") || null) as BudgetLevel | null,
       user_preferences: {
         travel_styles: styles,
         interests,
@@ -75,19 +67,20 @@ export default function SearchPanel({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Start date" name="start_date" type="date" defaultValue={defaultStartDate} />
-        <Field label="End date" name="end_date" type="date" defaultValue={defaultEndDate} />
+        <Field label="Start date" name="start_date" type="date" />
+        <Field label="End date" name="end_date" type="date" />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Origin" name="origin_location" defaultValue="Denver, CO" />
+        <Field label="Origin" name="origin_location" />
         <label className="text-sm font-semibold text-stone-800">
           Budget
           <select
             name="budget_level"
-            defaultValue="medium"
+            defaultValue=""
             className="mt-2 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
           >
+            <option value="">Infer</option>
             <option value="low">Low</option>
             <option value="medium">Medium</option>
             <option value="high">High</option>
