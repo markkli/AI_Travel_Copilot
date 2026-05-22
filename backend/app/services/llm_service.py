@@ -28,7 +28,7 @@ class LLMService:
 
         client = OpenAI(api_key=self.settings.openai_api_key)
         completion = client.beta.chat.completions.parse(
-            model=self.settings.openai_model,
+            model=self.settings.openai_normalization_model,
             messages=[
                 {
                     "role": "system",
@@ -36,7 +36,7 @@ class LLMService:
                         "You are a travel request normalization agent. Convert vague travel input "
                         "into a complete GenerateTripRequest JSON object. Use the current date "
                         f"{date.today().isoformat()} to infer relative dates. If dates are missing, "
-                        "default to a trip starting about 30 days from today and lasting 7 days. "
+                        "default to a trip starting about 30 days from today and lasting exactly 4 days inclusive. "
                         "If budget is missing, use medium. If traveler count is missing, use 2. "
                         "Preserve explicit user-provided fields."
                     ),
@@ -54,7 +54,7 @@ class LLMService:
 
     def _normalize_with_rules(self, draft: TripDraftRequest) -> GenerateTripRequest:
         start_date = draft.start_date or (date.today() + timedelta(days=30))
-        end_date = draft.end_date or (start_date + timedelta(days=6))
+        end_date = draft.end_date or (start_date + timedelta(days=3))
 
         return GenerateTripRequest(
             query=draft.query,

@@ -47,9 +47,7 @@ export default function SearchPanel({
     });
   }
 
-  const defaultQuery =
-    selectedRecommendation?.title ??
-    "I want a 3-day scenic trip in the Rocky Mountains with no long drives, good for astrophotography and hidden trails.";
+  const defaultQuery = selectedRecommendation?.title ?? "";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
@@ -63,6 +61,7 @@ export default function SearchPanel({
           name="query"
           rows={5}
           defaultValue={defaultQuery}
+          placeholder="Describe the trip you want, e.g. scenic Alaska next month with low driving and wildlife photography."
           className="mt-2 w-full resize-none rounded-md border border-stone-300 px-3 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
         />
       </div>
@@ -95,9 +94,9 @@ export default function SearchPanel({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Styles" name="travel_styles" defaultValue="scenic, photography, low-driving" />
-        <Field label="Interests" name="interests" defaultValue="astrophotography, hidden trails" />
-        <Field label="Avoid" name="avoid" defaultValue="long drives, crowds" />
+        <Field label="Styles" name="travel_styles" />
+        <Field label="Interests" name="interests" />
+        <Field label="Avoid" name="avoid" />
       </div>
 
       <button

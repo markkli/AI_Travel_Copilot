@@ -45,4 +45,4 @@ def test_normalize_trip_request_fills_missing_defaults() -> None:
     assert normalized.budget_level == BudgetLevel.MEDIUM
     assert normalized.num_travelers == 2
     assert normalized.origin_location is None
-    assert (normalized.end_date - normalized.start_date).days == 6
+    assert (normalized.end_date - normalized.start_date).days == 3

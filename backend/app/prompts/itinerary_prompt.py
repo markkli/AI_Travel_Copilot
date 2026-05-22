@@ -19,7 +19,9 @@ Schema:
 {schema_json}
 
 Important planning rules:
-- Each day must contain multiple sequential segments, not a simple day summary.
+- Each day must contain 3-4 sequential segments, not a simple day summary.
+- Keep segment descriptions concise, ideally under 25 words.
+- Include at most 2 tips per segment.
 - Include realistic buffers and avoid overloading the day.
 - Respect user constraints such as budget, low driving, photography, food, accessibility, and avoid lists.
 - Estimate the total trip cost range for the requested number of travelers, excluding flights unless flight segments are included.

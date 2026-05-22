@@ -130,5 +130,5 @@ def test_generate_trip_from_draft_endpoint_returns_itinerary() -> None:
     assert data["budget_level"] == "medium"
     assert data["num_travelers"] == 2
     assert data["estimated_total_cost_range"] is not None
-    assert len(data["days"]) == 7
+    assert len(data["days"]) == 4
     assert len(data["days"][0]["segments"]) > 1

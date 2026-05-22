@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     llm_mode: Literal["mock", "openai"] = "mock"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
+    openai_normalization_model: str = "gpt-4.1-nano"
 
 
 @lru_cache
