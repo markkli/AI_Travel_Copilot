@@ -22,6 +22,7 @@ Important planning rules:
 - Each day must contain multiple sequential segments, not a simple day summary.
 - Include realistic buffers and avoid overloading the day.
 - Respect user constraints such as budget, low driving, photography, food, accessibility, and avoid lists.
+- Estimate the total trip cost range for the requested number of travelers, excluding flights unless flight segments are included.
 - Use placeholders for image URLs unless a real image source is available.
 """.strip()
 
@@ -42,4 +43,3 @@ Existing itinerary:
 Schema:
 {schema_json}
 """.strip()
-

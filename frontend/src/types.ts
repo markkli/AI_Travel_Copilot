@@ -26,6 +26,7 @@ export type GenerateTripRequest = {
   end_date: string;
   origin_location?: string | null;
   budget_level?: BudgetLevel | null;
+  num_travelers: number;
   user_preferences: UserPreferences;
 };
 
@@ -35,6 +36,7 @@ export type TripDraftRequest = {
   end_date?: string | null;
   origin_location?: string | null;
   budget_level?: BudgetLevel | null;
+  num_travelers: number;
   user_preferences: UserPreferences;
 };
 
@@ -78,6 +80,8 @@ export type TripPlan = {
   end_date: string;
   travel_style: string[];
   budget_level: BudgetLevel;
+  num_travelers: number;
+  estimated_total_cost_range?: string | null;
   summary: string;
   days: TripDay[];
 };

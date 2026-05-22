@@ -38,6 +38,7 @@ export default function SearchPanel({
       end_date: String(form.get("end_date") ?? "") || null,
       origin_location: String(form.get("origin_location") ?? "") || null,
       budget_level: (String(form.get("budget_level") ?? "") || null) as BudgetLevel | null,
+      num_travelers: Number(form.get("num_travelers") ?? 2),
       user_preferences: {
         travel_styles: styles,
         interests,
@@ -73,6 +74,10 @@ export default function SearchPanel({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Origin" name="origin_location" />
+        <Field label="Travelers" name="num_travelers" type="number" defaultValue="2" min="1" max="20" />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-1">
         <label className="text-sm font-semibold text-stone-800">
           Budget
           <select
@@ -111,9 +116,11 @@ type FieldProps = {
   name: string;
   type?: string;
   defaultValue?: string;
+  min?: string;
+  max?: string;
 };
 
-function Field({ label, name, type = "text", defaultValue }: FieldProps) {
+function Field({ label, name, type = "text", defaultValue, min, max }: FieldProps) {
   return (
     <label htmlFor={name} className="text-sm font-semibold text-stone-800">
       {label}
@@ -122,6 +129,8 @@ function Field({ label, name, type = "text", defaultValue }: FieldProps) {
         name={name}
         type={type}
         defaultValue={defaultValue}
+        min={min}
+        max={max}
         className="mt-2 w-full rounded-md border border-stone-300 px-3 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
       />
     </label>

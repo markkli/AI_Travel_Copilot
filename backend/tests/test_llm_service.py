@@ -29,6 +29,7 @@ def test_parse_trip_intent_extracts_structured_request() -> None:
     assert intent.interests == ["Jenny Lake", "Oxbow Bend", "sunrise viewpoints"]
     assert intent.constraints == ["long drives"]
 
+
 def test_normalize_trip_request_fills_missing_defaults() -> None:
     service = LLMService()
 
@@ -42,5 +43,6 @@ def test_normalize_trip_request_fills_missing_defaults() -> None:
 
     assert normalized.query == draft.query
     assert normalized.budget_level == BudgetLevel.MEDIUM
+    assert normalized.num_travelers == 2
     assert normalized.origin_location is None
     assert (normalized.end_date - normalized.start_date).days == 6

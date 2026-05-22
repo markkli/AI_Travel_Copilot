@@ -35,6 +35,8 @@ def test_generate_trip_returns_structured_itinerary() -> None:
     assert data["destination_region"] == "Rocky Mountains"
     assert len(data["days"]) == 3
     assert len(data["days"][0]["segments"]) > 1
+    assert data["num_travelers"] == 2
+    assert data["estimated_total_cost_range"] is not None
 
 
 def test_recommendations_return_lightweight_cards() -> None:
@@ -95,6 +97,7 @@ def test_parse_trip_intent_endpoint_returns_structured_intent() -> None:
     assert data["travel_styles"] == ["photography", "wildlife", "scenic"]
     assert data["constraints"] == ["long drives"]
 
+
 def test_normalize_trip_endpoint_fills_missing_defaults() -> None:
     response = client.post(
         "/trip/normalize",
@@ -107,6 +110,7 @@ def test_normalize_trip_endpoint_fills_missing_defaults() -> None:
     data = response.json()
     assert data["query"] == "I want a scenic Alaska trip with low driving and good photography."
     assert data["budget_level"] == "medium"
+    assert data["num_travelers"] == 2
     assert data["origin_location"] is None
     assert data["start_date"] is not None
     assert data["end_date"] is not None
@@ -124,5 +128,7 @@ def test_generate_trip_from_draft_endpoint_returns_itinerary() -> None:
     data = response.json()
     assert data["destination_region"] == "Rocky Mountains"
     assert data["budget_level"] == "medium"
+    assert data["num_travelers"] == 2
+    assert data["estimated_total_cost_range"] is not None
     assert len(data["days"]) == 7
     assert len(data["days"][0]["segments"]) > 1

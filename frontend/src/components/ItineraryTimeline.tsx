@@ -22,6 +22,11 @@ export default function ItineraryTimeline({ trip }: ItineraryTimelineProps) {
         <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">{trip.destination_region}</p>
         <h2 className="mt-1 text-2xl font-bold text-stone-950">{trip.trip_title}</h2>
         <p className="mt-2 text-sm leading-6 text-stone-600">{trip.summary}</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <OverviewStat label="Travelers" value={`${trip.num_travelers}`} />
+          <OverviewStat label="Budget" value={trip.budget_level} />
+          <OverviewStat label="Estimated cost" value={trip.estimated_total_cost_range ?? "TBD"} />
+        </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {trip.travel_style.map((style) => (
             <span key={style} className="rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-800">
@@ -85,3 +90,16 @@ export default function ItineraryTimeline({ trip }: ItineraryTimelineProps) {
   );
 }
 
+type OverviewStatProps = {
+  label: string;
+  value: string;
+};
+
+function OverviewStat({ label, value }: OverviewStatProps) {
+  return (
+    <div className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2">
+      <p className="text-xs font-semibold uppercase text-stone-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-stone-900">{value}</p>
+    </div>
+  );
+}

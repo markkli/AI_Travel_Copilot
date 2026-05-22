@@ -22,7 +22,9 @@ class TripDraftRequest(BaseModel):
     end_date: date | None = None
     origin_location: str | None = None
     budget_level: BudgetLevel | None = None
+    num_travelers: int = Field(default=2, ge=1, le=20)
     user_preferences: UserPreferences = Field(default_factory=UserPreferences)
+
 
 class TripIntent(BaseModel):
     destination_region: str
@@ -42,6 +44,7 @@ class GenerateTripRequest(BaseModel):
     end_date: date
     origin_location: str | None = Field(default=None, examples=["Denver, CO"])
     budget_level: BudgetLevel | None = BudgetLevel.MEDIUM
+    num_travelers: int = Field(default=2, ge=1, le=20)
     user_preferences: UserPreferences = Field(default_factory=UserPreferences)
 
     @model_validator(mode="after")
@@ -100,6 +103,8 @@ class TripPlan(BaseModel):
     end_date: date
     travel_style: list[str] = Field(default_factory=list)
     budget_level: BudgetLevel
+    num_travelers: int = Field(default=2, ge=1, le=20)
+    estimated_total_cost_range: str | None = None
     summary: str
     days: list[TripDay] = Field(min_length=1)
 

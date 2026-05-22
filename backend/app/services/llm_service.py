@@ -37,7 +37,8 @@ class LLMService:
                         "into a complete GenerateTripRequest JSON object. Use the current date "
                         f"{date.today().isoformat()} to infer relative dates. If dates are missing, "
                         "default to a trip starting about 30 days from today and lasting 7 days. "
-                        "If budget is missing, use medium. Preserve explicit user-provided fields."
+                        "If budget is missing, use medium. If traveler count is missing, use 2. "
+                        "Preserve explicit user-provided fields."
                     ),
                 },
                 {"role": "user", "content": draft.model_dump_json()},
@@ -61,6 +62,7 @@ class LLMService:
             end_date=end_date,
             origin_location=draft.origin_location,
             budget_level=draft.budget_level or BudgetLevel.MEDIUM,
+            num_travelers=draft.num_travelers,
             user_preferences=draft.user_preferences,
         )
 
@@ -135,6 +137,7 @@ class LLMService:
         destination_region = intent.destination_region
         origin = request.origin_location or "Flexible origin"
         budget = request.budget_level or BudgetLevel.MEDIUM
+        num_travelers = request.num_travelers
         travel_style = intent.travel_styles
         trip_length = intent.inferred_duration_days
 
@@ -169,10 +172,28 @@ class LLMService:
                 "end_date": request.end_date,
                 "travel_style": travel_style,
                 "budget_level": budget,
+                "num_travelers": num_travelers,
+                "estimated_total_cost_range": self._mock_cost_range(
+                    trip_length=trip_length,
+                    budget=budget,
+                    num_travelers=num_travelers,
+                ),
                 "summary": "A mock structured itinerary generated from local schemas and placeholder context.",
                 "days": days,
             }
         )
+
+    def _mock_cost_range(self, trip_length: int, budget: BudgetLevel, num_travelers: int) -> str:
+        daily_cost_by_budget = {
+            BudgetLevel.LOW: (90, 150),
+            BudgetLevel.MEDIUM: (180, 300),
+            BudgetLevel.HIGH: (350, 600),
+            BudgetLevel.LUXURY: (700, 1200),
+        }
+        daily_min, daily_max = daily_cost_by_budget[budget]
+        min_total = daily_min * trip_length * num_travelers
+        max_total = daily_max * trip_length * num_travelers
+        return f"${min_total:,}-${max_total:,} for {num_travelers} traveler(s), excluding flights"
 
     def _mock_segments(self, day_number: int, origin: str, base_area: str, destination_region: str) -> list[dict]:
         if day_number == 1:
