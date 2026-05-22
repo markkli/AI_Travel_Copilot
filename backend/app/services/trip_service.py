@@ -1,3 +1,6 @@
+import json
+from collections.abc import Iterator
+
 from app.prompts.itinerary_prompt import build_itinerary_prompt, build_refinement_prompt
 from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripDraftRequest, TripIntent, TripPlan
 from app.services.llm_service import LLMService
@@ -28,7 +31,25 @@ class TripService:
     def generate_trip_from_draft(self, draft: TripDraftRequest) -> TripPlan:
         request = self.normalize_trip_request(draft)
         return self.generate_trip(request)
-        
+
+    def stream_trip_from_draft(self, draft: TripDraftRequest) -> Iterator[str]:
+        yield self._sse("status", {"message": "Normalizing your travel request..."})
+        request = self.normalize_trip_request(draft)
+
+        yield self._sse("status", {"message": "Finding relevant travel context..."})
+        context = self.retrieval_service.get_context(request.query)
+
+        yield self._sse("status", {"message": "Building the itinerary prompt..."})
+        prompt = build_itinerary_prompt(request, context)
+
+        yield self._sse("status", {"message": "Generating a concise structured itinerary..."})
+        trip_plan = self.llm_service.generate_structured_trip(request, prompt)
+
+        yield self._sse("status", {"message": "Validating itinerary structure..."})
+        validated_trip = TripPlan.model_validate(trip_plan.model_dump())
+
+        yield self._sse("result", validated_trip.model_dump(mode="json"))
+
     def refine_trip(self, request: RefineTripRequest) -> TripPlan:
         prompt = build_refinement_prompt(request.existing_itinerary, request.user_feedback)
         return self.llm_service.refine_structured_trip(
@@ -36,3 +57,6 @@ class TripService:
             user_feedback=request.user_feedback,
             prompt=prompt,
         )
+
+    def _sse(self, event: str, data: dict) -> str:
+        return f"event: {event}\ndata: {json.dumps(data)}\n\n"

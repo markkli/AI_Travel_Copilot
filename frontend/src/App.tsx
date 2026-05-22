@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { fetchRecommendations, generateTripFromDraft, refineTrip } from "./api";
+import { fetchRecommendations, refineTrip, streamTripFromDraft } from "./api";
 import ItineraryTimeline from "./components/ItineraryTimeline";
 import RecommendationCards from "./components/RecommendationCards";
 import RefinementBox from "./components/RefinementBox";
@@ -13,6 +13,7 @@ export default function App() {
   const [trip, setTrip] = useState<TripPlan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,9 +25,11 @@ export default function App() {
   async function handleGenerate(payload: TripDraftRequest) {
     setIsGenerating(true);
     setError(null);
+    setGenerationStatus("Starting trip generation...");
     try {
-      const generatedTrip = await generateTripFromDraft(payload);
+      const generatedTrip = await streamTripFromDraft(payload, setGenerationStatus);
       setTrip(generatedTrip);
+      setGenerationStatus("Itinerary ready.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Trip generation failed.");
     } finally {
@@ -77,6 +80,11 @@ export default function App() {
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {error}
+            </div>
+          )}
+          {generationStatus && (
+            <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm font-medium text-teal-800">
+              {generationStatus}
             </div>
           )}
         </aside>

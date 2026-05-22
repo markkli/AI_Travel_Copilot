@@ -132,3 +132,18 @@ def test_generate_trip_from_draft_endpoint_returns_itinerary() -> None:
     assert data["estimated_total_cost_range"] is not None
     assert len(data["days"]) == 4
     assert len(data["days"][0]["segments"]) > 1
+
+
+def test_generate_trip_from_draft_stream_returns_status_and_result_events() -> None:
+    response = client.post(
+        "/trip/generate-from-draft-stream",
+        json={
+            "query": "I want a scenic Rocky Mountains trip with low driving and photography."
+        },
+    )
+
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers["content-type"]
+    assert "event: status" in response.text
+    assert "event: result" in response.text
+    assert "Rocky Mountains" in response.text

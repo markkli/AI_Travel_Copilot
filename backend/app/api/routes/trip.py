@@ -1,4 +1,6 @@
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
+
 from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripDraftRequest, TripIntent, TripPlan
 from app.services.trip_service import TripService
 
@@ -23,6 +25,14 @@ def generate_trip(request: GenerateTripRequest) -> TripPlan:
 @router.post("/generate-from-draft", response_model=TripPlan)
 def generate_trip_from_draft(request: TripDraftRequest) -> TripPlan:
     return trip_service.generate_trip_from_draft(request)
+
+
+@router.post("/generate-from-draft-stream")
+def stream_trip_from_draft(request: TripDraftRequest) -> StreamingResponse:
+    return StreamingResponse(
+        trip_service.stream_trip_from_draft(request),
+        media_type="text/event-stream",
+    )
 
 
 @router.post("/refine", response_model=TripPlan)
