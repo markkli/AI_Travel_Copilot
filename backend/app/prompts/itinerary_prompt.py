@@ -25,6 +25,12 @@ Important planning rules:
 - Include realistic buffers and avoid overloading the day.
 - Respect user constraints such as budget, low driving, photography, food, accessibility, and avoid lists.
 - Estimate the total trip cost range for the requested number of travelers, excluding flights unless flight segments are included.
+- Prefer specific named recommendations over generic placeholders.
+- For activities, viewpoints, trails, museums, neighborhoods, and scenic stops, use real place names when reasonably confident.
+- For meals, include 1 specific restaurant/cafe option when reasonably confident; otherwise name a specific neighborhood or food hall area.
+- For lodging, recommend a specific lodging area, neighborhood, or base town rather than a generic "hotel" phrase.
+- Avoid phrases like "local restaurant", "nearby cafe", "scenic viewpoint", or "hidden trail" unless paired with a specific named example.
+- If a named recommendation may require verification, add a brief tip to confirm hours, reservations, permits, or seasonal access.
 - Use placeholders for image URLs unless a real image source is available.
 """.strip()
 
