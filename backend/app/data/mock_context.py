@@ -44,7 +44,23 @@ MOCK_TRAVEL_CONTEXT = {
             "Signal Mountain",
             "Oxbow Bend",
         ],
-    }
+    },
+    "alaska": {
+        "region": "Alaska",
+        "notes": [
+            "Use fewer base towns for low-driving trips because distances are large.",
+            "Coastal weather can be rainy and variable even in summer.",
+            "Wildlife cruises and glacier viewpoints are strong photography anchors.",
+        ],
+        "places": [
+            "Anchorage",
+            "Girdwood",
+            "Seward",
+            "Kenai Fjords National Park",
+            "Turnagain Arm",
+            "Potter Marsh",
+        ],
+    },
 }
 
 
@@ -54,5 +70,6 @@ def get_mock_context(query: str) -> dict:
         return MOCK_TRAVEL_CONTEXT["amsterdam"]
     elif "teton" in normalized_query:
         return MOCK_TRAVEL_CONTEXT["grand_teton"]
+    elif "alaska" in normalized_query:
+        return MOCK_TRAVEL_CONTEXT["alaska"]
     return MOCK_TRAVEL_CONTEXT["rocky_mountains"]
-

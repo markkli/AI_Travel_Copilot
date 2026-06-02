@@ -18,6 +18,7 @@ def test_retrieval_service_defaults_to_rocky_mountains_context() -> None:
     assert context["region"] == "Rocky Mountains"
     assert "Estes Park" in context["places"]
 
+
 def test_retrieval_service_returns_grand_teton_context() -> None:
     service = RetrievalService()
 
@@ -26,3 +27,13 @@ def test_retrieval_service_returns_grand_teton_context() -> None:
     assert context["region"] == "Grand Teton National Park"
     assert "Jenny Lake" in context["places"]
 
+
+def test_retrieval_service_returns_destination_doc_chunks_for_alaska() -> None:
+    service = RetrievalService()
+
+    context = service.get_context("Plan a scenic Alaska wildlife photography trip near Seward")
+
+    assert "retrieved_chunks" in context
+    chunk_text = " ".join(chunk["text"] for chunk in context["retrieved_chunks"])
+    assert "Seward" in chunk_text
+    assert "wildlife" in chunk_text.lower()
