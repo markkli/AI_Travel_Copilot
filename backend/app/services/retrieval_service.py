@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from app.data.mock_context import get_mock_context
-
+from app.schemas.retrieval import RetrievedChunk
 
 class RetrievalService:
     def __init__(self, docs_dir: Path | None = None) -> None:
