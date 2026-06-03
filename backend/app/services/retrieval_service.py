@@ -16,10 +16,10 @@ class RetrievalService:
 
         return {
             **base_context,
-            "retrieved_chunks": doc_chunks,
+            "retrieved_chunks": [chunk.model_dump() for chunk in doc_chunks],
         }
 
-    def _retrieve_doc_chunks(self, query: str, limit: int = 3) -> list[dict[str, str]]:
+    def _retrieve_doc_chunks(self, query: str, limit: int = 3) -> list[RetrievedChunk]:
         if not self.docs_dir.exists():
             return []
 
@@ -31,12 +31,12 @@ class RetrievalService:
                 chunk_terms = self._tokenize(chunk["text"])
                 score = len(query_terms.intersection(chunk_terms))
                 if score > 0:
-                    scored_chunks.append((score, chunk))
+                    scored_chunks.append((score, chunk.model_copy(update={"score": float(score)})))
 
         scored_chunks.sort(key=lambda item: item[0], reverse=True)
         return [chunk for _, chunk in scored_chunks[:limit]]
 
-    def _load_markdown_chunks(self, doc_path: Path) -> list[dict[str, str]]:
+    def _load_markdown_chunks(self, doc_path: Path) -> list[RetrievedChunk]:
         chunks = []
         current_heading = doc_path.stem.replace("_", " ").title()
         current_lines = []
@@ -45,11 +45,11 @@ class RetrievalService:
             if line.startswith("## "):
                 if current_lines:
                     chunks.append(
-                        {
-                            "source": doc_path.name,
-                            "heading": current_heading,
-                            "text": " ".join(current_lines).strip(),
-                        }
+                        RetrievedChunk(
+                            source=doc_path.name,
+                            heading=current_heading,
+                            text=" ".join(current_lines).strip(),
+                        )
                     )
                 current_heading = line.removeprefix("## ").strip()
                 current_lines = []
