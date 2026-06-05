@@ -17,3 +17,6 @@ Anchorage has strong casual seafood options. Seward has harbor-area restaurants 
 
 ## Seasonal Notes
 Summer has long daylight and easier road access. Weather can still be rainy and variable, especially near the coast. If user is interested in aurora viewing, be sure to advise against summer time.
+
+## Aurora Viewing Guide
+...
