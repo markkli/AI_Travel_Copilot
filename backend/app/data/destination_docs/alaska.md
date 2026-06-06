@@ -3,7 +3,7 @@
 ## Best Bases
 Anchorage is the easiest arrival base. Seward is strong for Kenai Fjords, wildlife cruises, and coastal scenery. Girdwood works well for short scenic stays near Turnagain Arm.
 
-## Low-Driving Strategy
+## Low-Driving Strat
 Use one or two base towns instead of moving every night. For a relaxed first trip, combine Anchorage, Girdwood, and Seward rather than trying to include Denali and Homer. Fairbanks could also be a solid base for aurora viewing season
 
 ## Wildlife Photography
