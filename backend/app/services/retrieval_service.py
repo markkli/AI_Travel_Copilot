@@ -1,16 +1,48 @@
 from pathlib import Path
 
+from app.core.config import Settings, get_settings
 from app.data.mock_context import get_mock_context
 from app.schemas.retrieval import RetrievedChunk
+from app.services.document_service import DocumentService
+from app.services.embedding_service import EmbeddingService
+from app.services.vector_store_service import VectorStoreService
 
 
 class RetrievalService:
-    def __init__(self, docs_dir: Path | None = None) -> None:
-        self.docs_dir = docs_dir or Path(__file__).resolve().parents[1] / "data" / "destination_docs"
+    STOP_WORDS = {
+        "and",
+        "are",
+        "for",
+        "from",
+        "into",
+        "near",
+        "not",
+        "the",
+        "this",
+        "trip",
+        "with",
+        "without",
+    }
+
+    def __init__(
+        self,
+        docs_dir: Path | None = None,
+        settings: Settings | None = None,
+        document_service: DocumentService | None = None,
+        embedding_service: EmbeddingService | None = None,
+        vector_store: VectorStoreService | None = None,
+    ) -> None:
+        self.settings = settings or get_settings()
+        self.document_service = document_service or DocumentService(docs_dir)
+        self.embedding_service = embedding_service or EmbeddingService(self.settings)
+        self.vector_store = vector_store or VectorStoreService(self.settings)
 
     def get_context(self, query: str) -> dict:
         base_context = get_mock_context(query)
-        doc_chunks = self._retrieve_doc_chunks(query)
+        doc_chunks = self._retrieve_doc_chunks(
+            query,
+            limit=self.settings.retrieval_top_k,
+        )
 
         if not doc_chunks:
             return base_context
@@ -21,53 +53,37 @@ class RetrievalService:
         }
 
     def _retrieve_doc_chunks(self, query: str, limit: int = 3) -> list[RetrievedChunk]:
-        if not self.docs_dir.exists():
-            return []
+        semantic_chunks = self.vector_store.query(
+            self.embedding_service.embed_text(query),
+            limit=limit,
+        )
+        semantic_chunks = [
+            chunk
+            for chunk in semantic_chunks
+            if chunk.score is not None
+            and chunk.score >= self.settings.retrieval_min_score
+        ]
+        if semantic_chunks:
+            return semantic_chunks
 
         query_terms = self._tokenize(query)
-        scored_chunks = []
+        scored_chunks: list[tuple[int, RetrievedChunk]] = []
 
-        for doc_path in self.docs_dir.glob("*.md"):
-            for chunk in self._load_markdown_chunks(doc_path):
-                chunk_terms = self._tokenize(chunk.text)
-                score = len(query_terms.intersection(chunk_terms))
-                if score > 0:
-                    scored_chunks.append((score, chunk.model_copy(update={"score": float(score)})))
+        for chunk in self.document_service.load_chunks():
+            chunk_terms = self._tokenize(f"{chunk.heading} {chunk.text}")
+            score = len(query_terms.intersection(chunk_terms))
+            if score > 0:
+                scored_chunks.append(
+                    (score, chunk.model_copy(update={"score": float(score)}))
+                )
 
         scored_chunks.sort(key=lambda item: item[0], reverse=True)
         return [chunk for _, chunk in scored_chunks[:limit]]
 
-    def _load_markdown_chunks(self, doc_path: Path) -> list[RetrievedChunk]:
-        chunks = []
-        current_heading = doc_path.stem.replace("_", " ").title()
-        current_lines = []
-
-        for line in doc_path.read_text(encoding="utf-8").splitlines():
-            if line.startswith("## "):
-                if current_lines:
-                    chunks.append(
-                        RetrievedChunk(
-                            source=doc_path.name,
-                            heading=current_heading,
-                            text=" ".join(current_lines).strip(),
-                        )
-                    )
-                current_heading = line.removeprefix("## ").strip()
-                current_lines = []
-            elif line and not line.startswith("# "):
-                current_lines.append(line.strip())
-
-        if current_lines:
-            chunks.append(
-                RetrievedChunk(
-                    source=doc_path.name,
-                    heading=current_heading,
-                    text=" ".join(current_lines).strip(),
-                )
-            )
-
-        return chunks
-
     def _tokenize(self, text: str) -> set[str]:
         normalized = "".join(char.lower() if char.isalnum() else " " for char in text)
-        return {token for token in normalized.split() if len(token) > 2}
+        return {
+            token
+            for token in normalized.split()
+            if len(token) > 2 and token not in self.STOP_WORDS
+        }
