@@ -3,6 +3,7 @@ from pathlib import Path
 from app.data.mock_context import get_mock_context
 from app.schemas.retrieval import RetrievedChunk
 
+
 class RetrievalService:
     def __init__(self, docs_dir: Path | None = None) -> None:
         self.docs_dir = docs_dir or Path(__file__).resolve().parents[1] / "data" / "destination_docs"
@@ -28,7 +29,7 @@ class RetrievalService:
 
         for doc_path in self.docs_dir.glob("*.md"):
             for chunk in self._load_markdown_chunks(doc_path):
-                chunk_terms = self._tokenize(chunk["text"])
+                chunk_terms = self._tokenize(chunk.text)
                 score = len(query_terms.intersection(chunk_terms))
                 if score > 0:
                     scored_chunks.append((score, chunk.model_copy(update={"score": float(score)})))
@@ -58,11 +59,11 @@ class RetrievalService:
 
         if current_lines:
             chunks.append(
-                {
-                    "source": doc_path.name,
-                    "heading": current_heading,
-                    "text": " ".join(current_lines).strip(),
-                }
+                RetrievedChunk(
+                    source=doc_path.name,
+                    heading=current_heading,
+                    text=" ".join(current_lines).strip(),
+                )
             )
 
         return chunks
