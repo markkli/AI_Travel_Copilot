@@ -2,15 +2,14 @@
 
 Backend-first MVP for a structured AI travel-planning app.
 
-The first milestone focuses on:
+The current MVP focuses on:
 
 - FastAPI backend
 - Detailed nested Pydantic itinerary schemas
-- Mock travel context retrieval
-- Mock LLM generation/refinement with schema validation
+- Markdown-backed RAG retrieval with Chroma
+- Mock or OpenAI generation with schema validation
 - Lightweight recommendation cards
-
-Frontend comes after the backend contracts are stable.
+- React frontend with itinerary generation and refinement controls
 
 ## Backend Quickstart
 
@@ -38,6 +37,54 @@ Open:
 - `POST /trip/generate`
 - `POST /trip/refine`
 - `GET /recommendations`
+
+## RAG Knowledge Index
+
+Destination knowledge lives in:
+
+```text
+backend/app/data/destination_docs/
+```
+
+After adding or editing a destination document, rebuild the vector index:
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m app.cli.index_destination_docs
+```
+
+The default configuration uses deterministic local embeddings and stores
+Chroma data under `backend/data/chroma`, so indexing is free and works offline.
+To use OpenAI embeddings, copy `backend/.env.example` to `backend/.env`, then
+set:
+
+```text
+EMBEDDING_MODE=openai
+OPENAI_API_KEY=your-key
+```
+
+Rebuild the index whenever the embedding model or destination documents change.
+
+### Optional Docker Chroma
+
+The embedded Chroma database is enough for local development. To run the vector
+database as a separate service instead:
+
+```bash
+docker compose up -d chroma
+```
+
+Then set these values in `backend/.env`:
+
+```text
+CHROMA_MODE=http
+CHROMA_HOST=localhost
+CHROMA_PORT=8100
+```
+
+Run the indexing command again after switching modes. Docker must be installed
+before using this option.
 
 ## Example API Calls
 

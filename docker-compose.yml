@@ -1,0 +1,14 @@
+services:
+  chroma:
+    image: chromadb/chroma:1.5.9
+    ports:
+      - "8100:8000"
+    environment:
+      IS_PERSISTENT: "TRUE"
+      PERSIST_DIRECTORY: /data
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes:
+      - chroma_data:/data
+
+volumes:
+  chroma_data:
