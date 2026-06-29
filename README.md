@@ -18,13 +18,14 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn app.main:app
 ```
 
-If file watching is restricted in your environment, run without reload:
+During backend development, automatic reload can be enabled while excluding
+the local Chroma database:
 
 ```bash
-uvicorn app.main:app
+uvicorn app.main:app --reload --reload-exclude "data/chroma/*"
 ```
 
 Open:

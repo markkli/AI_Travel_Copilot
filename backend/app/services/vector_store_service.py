@@ -12,23 +12,36 @@ class VectorStoreService:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or get_settings()
         self.persist_path = self._resolve_persist_path(self.settings.chroma_path)
+        self._client: Any | None = None
+        self._collection: Any | None = None
 
+    @property
+    def client(self) -> Any:
+        if self._client is None:
+            self._client = self._create_client()
+        return self._client
+
+    @property
+    def collection(self) -> Any:
+        if self._collection is None:
+            self._collection = self.client.get_or_create_collection(
+                name=self.settings.chroma_collection,
+                metadata={"hnsw:space": "cosine"},
+            )
+        return self._collection
+
+    def _create_client(self) -> Any:
         import chromadb
 
         if self.settings.chroma_mode == "http":
-            self.client = chromadb.HttpClient(
+            return chromadb.HttpClient(
                 host=self.settings.chroma_host,
                 port=self.settings.chroma_port,
                 ssl=self.settings.chroma_ssl,
             )
-        else:
-            self.persist_path.mkdir(parents=True, exist_ok=True)
-            self.client = chromadb.PersistentClient(path=str(self.persist_path))
 
-        self.collection = self.client.get_or_create_collection(
-            name=self.settings.chroma_collection,
-            metadata={"hnsw:space": "cosine"},
-        )
+        self.persist_path.mkdir(parents=True, exist_ok=True)
+        return chromadb.PersistentClient(path=str(self.persist_path))
 
     def upsert(
         self,
@@ -85,7 +98,7 @@ class VectorStoreService:
 
     def reset(self) -> None:
         self.client.delete_collection(self.settings.chroma_collection)
-        self.collection = self.client.get_or_create_collection(
+        self._collection = self.client.get_or_create_collection(
             name=self.settings.chroma_collection,
             metadata={"hnsw:space": "cosine"},
         )
