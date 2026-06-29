@@ -97,6 +97,8 @@ class VectorStoreService:
         return self.collection.count()
 
     def reset(self) -> None:
+        # Ensure a first-time index has a collection before replacing it.
+        _ = self.collection
         self.client.delete_collection(self.settings.chroma_collection)
         self._collection = self.client.get_or_create_collection(
             name=self.settings.chroma_collection,
