@@ -45,7 +45,7 @@ export default function SearchPanel({ isLoading, selectedRecommendation, onSubmi
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-cream-300 dark:border-forest-700 bg-white dark:bg-forest-800 shadow-lg shadow-forest-900/5 dark:shadow-black/20 overflow-hidden"
+      className="rounded-2xl border border-cream-300 dark:border-forest-700/60 bg-white dark:bg-forest-950 shadow-lg shadow-forest-900/5 dark:shadow-black/50 overflow-hidden"
     >
       {/* Intent area */}
       <div className="p-5 pb-0">
@@ -103,7 +103,7 @@ export default function SearchPanel({ isLoading, selectedRecommendation, onSubmi
         <button
           type="submit"
           disabled={isLoading}
-          className="group relative w-full overflow-hidden rounded-xl bg-forest-900 dark:bg-gold-500 px-5 py-3.5 text-sm font-semibold text-cream-100 dark:text-forest-900 transition-all duration-200 hover:bg-forest-800 dark:hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          className="group relative w-full overflow-hidden rounded-xl bg-forest-900 dark:bg-gold-500 px-5 py-3.5 text-sm font-semibold text-cream-100 dark:text-forest-950 transition-all duration-200 hover:bg-forest-800 dark:hover:bg-gold-400 dark:shadow-md dark:shadow-gold-500/20 dark:hover:shadow-lg dark:hover:shadow-gold-500/30 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
