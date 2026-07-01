@@ -88,6 +88,9 @@ class LLMService:
         )
 
     def refine_structured_trip(self, existing_plan: TripPlan, user_feedback: str, prompt: str) -> TripPlan:
+        if self.settings.llm_mode == "openai":
+            return self._generate_with_openai(prompt)
+
         refined_plan = existing_plan.model_copy(deep=True)
         refined_plan.summary = f"{existing_plan.summary} Revised based on feedback: {user_feedback}"
         refined_plan.travel_style = sorted(set(refined_plan.travel_style + ["refined"]))

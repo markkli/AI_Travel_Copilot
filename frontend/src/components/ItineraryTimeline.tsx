@@ -2,9 +2,10 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import {
   PlaneLanding, PlaneTakeoff, Plane, Car, Train, Mountain,
   Camera, UtensilsCrossed, Bed, Timer, LogOut, ChevronDown, ChevronUp,
-  MapPin, Clock, DollarSign, Lightbulb, type LucideIcon,
+  MapPin, Clock, DollarSign, Lightbulb, CalendarDays, type LucideIcon,
 } from "lucide-react";
 import type { SegmentType, TripPlan } from "../types";
+import { downloadICS } from "../utils/exportCalendar";
 
 type ItineraryTimelineProps = {
   trip: TripPlan | null;
@@ -64,12 +65,23 @@ export default function ItineraryTimeline({ trip }: ItineraryTimelineProps) {
           <StatCard label="Est. cost" value={trip.estimated_total_cost_range ?? "TBD"} className="col-span-2 sm:col-span-1" />
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {trip.travel_style.map((style) => (
-            <span key={style} className="rounded-full bg-forest-900 dark:bg-gold-500/20 px-3 py-1 text-xs font-medium text-cream-100 dark:text-gold-300">
-              {style}
-            </span>
-          ))}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {trip.travel_style.map((style) => (
+              <span key={style} className="rounded-full bg-forest-900 dark:bg-gold-500/20 px-3 py-1 text-xs font-medium text-cream-100 dark:text-gold-300">
+                {style}
+              </span>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => downloadICS(trip)}
+            className="flex items-center gap-2 rounded-full border border-forest-300 dark:border-forest-600 bg-white dark:bg-forest-900/50 px-4 py-2 text-xs font-semibold text-forest-700 dark:text-forest-300 transition-all hover:border-gold-500 hover:text-gold-600 dark:hover:text-gold-400 dark:hover:border-gold-500 cursor-pointer"
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Export to Calendar
+          </button>
         </div>
       </div>
 
