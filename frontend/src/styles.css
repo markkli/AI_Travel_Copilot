@@ -7,6 +7,17 @@
     color-scheme: light dark;
   }
 
+  /* Base page color so the scrim blends correctly before the hero image loads */
+  html {
+    background-color: #F0EBE3; /* cream-100 */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html {
+      background-color: #06100b; /* forest-950 */
+    }
+  }
+
   body {
     margin: 0;
     min-width: 320px;

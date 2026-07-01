@@ -21,7 +21,7 @@ const INITIAL_STEPS: GenerationStep[] = [
 function updateStepsFromMessage(steps: GenerationStep[], message: string): GenerationStep[] {
   const next = steps.map((s) => ({ ...s }));
   const m = message.toLowerCase();
-  if (m.includes("normaliz"))                             { next[0].status = "active"; }
+  if (m.includes("normaliz"))                              { next[0].status = "active"; }
   else if (m.includes("finding") || m.includes("context")) { next[0].status = "done"; next[1].status = "active"; }
   else if (m.includes("building") || m.includes("prompt")) { next[0].status = "done"; next[1].status = "done"; next[2].status = "active"; }
   else if (m.includes("generating") || m.includes("concise")) { next[0].status = "done"; next[1].status = "done"; next[2].status = "done"; next[3].status = "active"; }
@@ -38,8 +38,26 @@ export default function HomePage() {
   const [isRefining, setIsRefining] = useState(false);
   const [steps, setSteps] = useState<GenerationStep[]>(INITIAL_STEPS);
   const [error, setError] = useState<string | null>(null);
-  const planRef = useRef<HTMLDivElement>(null);
+  const planRef    = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const heroBgRef  = useRef<HTMLDivElement>(null);  // the photo
+  const scrimRef   = useRef<HTMLDivElement>(null);  // dark overlay
+
+  // Scroll-driven effect: blur image + darken scrim together — no re-renders
+  useEffect(() => {
+    const bg    = heroBgRef.current;
+    const scrim = scrimRef.current;
+    if (!bg || !scrim) return;
+
+    const onScroll = () => {
+      const progress = Math.min(window.scrollY / (window.innerHeight * 0.75), 1);
+      bg.style.filter    = `blur(${progress * 18}px)`;
+      scrim.style.opacity = String(0.18 + progress * 0.52); // 0.18 → 0.70
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     fetchRecommendations()
@@ -98,67 +116,97 @@ export default function HomePage() {
   const showRecommendations = !isGenerating && !trip;
 
   return (
-    <div className="bg-cream-100 dark:bg-forest-900 text-forest-900 dark:text-cream-100 transition-colors">
-      {/* ── Hero — light: warm cream  /  dark: deep forest ────── */}
+    <div className="transition-colors">
       {/*
-        Hero background image: drop an image at frontend/public/hero-bg.jpg
-        and uncomment the two lines below.
+        ── Three fixed layers — unified backdrop for hero + form ──────────
+        All three are position:fixed so they never scroll away.
+        DOM order = stacking order: image at bottom, scrim on top.
       */}
-      <section className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-cream-50 dark:bg-forest-950">
-        {/* <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 dark:opacity-30"
-             style={{ backgroundImage: "url('/hero-bg.jpg')" }} /> */}
 
-        {/* Light mode: gentle gold halo at top, fades into cream */}
-        <div className="pointer-events-none absolute inset-0 dark:hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_55%_at_50%_-5%,rgba(201,160,40,0.12),transparent_65%)]" />
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-b from-transparent to-cream-100" />
-        </div>
+      {/* 1. Photo — blurs as you scroll */}
+      <div
+        ref={heroBgRef}
+        className="fixed inset-0 -z-10 scale-110 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/hero-bg.jpg')", willChange: "filter" }}
+      />
 
-        {/* Dark mode: dramatic gold bloom + corner vignettes */}
-        <div className="pointer-events-none absolute inset-0 hidden dark:block">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_55%_at_50%_-5%,rgba(201,160,40,0.22),transparent_65%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_0%_110%,rgba(6,16,11,0.9),transparent_60%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_100%_110%,rgba(6,16,11,0.9),transparent_60%)]" />
-        </div>
+      {/* 2. Gold ambient radial — static warmth over the photo */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{ background: "radial-gradient(ellipse 110% 60% at 50% -5%, rgba(201,160,40,0.22) 0%, transparent 65%)" }}
+      />
 
-        {/* Text */}
+      {/* 3. Dark scrim — starts at 18% opacity, darkens to 70% as you scroll */}
+      <div
+        ref={scrimRef}
+        className="pointer-events-none fixed inset-0 -z-10 bg-forest-950"
+        style={{ opacity: 0.18, willChange: "opacity" }}
+      />
+
+      {/* ── Hero — fully transparent, image/scrim show through ── */}
+      <section className="relative flex min-h-dvh flex-col items-center justify-center">
+        {/*
+          Centered radial vignette — darkens exactly where the text lives,
+          fades to nothing at the edges so the photo still shows beautifully.
+          Classic cinema lighting trick: no hard edges, no card.
+        */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(ellipse 72% 78% at 50% 50%, rgba(6,16,11,0.58) 0%, rgba(6,16,11,0.18) 55%, transparent 80%)" }}
+        />
+
         <div className="relative z-10 mx-auto max-w-3xl px-6 text-center animate-fade-in">
-          <p className="mb-5 text-xs font-semibold uppercase tracking-[0.3em] text-gold-600 dark:text-gold-500">
+          <p
+            className="mb-5 text-xs font-semibold uppercase tracking-[0.3em] text-gold-400"
+            style={{ textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}
+          >
             AI-Powered Travel Planning
           </p>
-          <h1 className="mb-6 font-serif text-6xl font-bold leading-[1.05] tracking-tight text-forest-900 dark:text-cream-50 md:text-7xl lg:text-8xl">
+          <h1
+            className="mb-6 font-serif text-6xl font-bold leading-[1.05] tracking-tight text-cream-50 md:text-7xl lg:text-8xl"
+            style={{ textShadow: "0 2px 10px rgba(0,0,0,0.85), 0 6px 32px rgba(0,0,0,0.5)" }}
+          >
             Plan your next<br />
-            <em className="not-italic text-gold-500 dark:text-gold-400">adventure.</em>
+            {/* Bright gold with triple-layer text-shadow glow — solid color pops on dark */}
+            <em
+              className="not-italic text-gold-300"
+              style={{ textShadow: "0 0 28px rgba(237,207,114,0.85), 0 0 80px rgba(201,160,40,0.45), 0 2px 10px rgba(0,0,0,0.95)" }}
+            >
+              adventure.
+            </em>
           </h1>
-          <p className="mb-10 mx-auto max-w-lg text-base leading-relaxed text-forest-600 dark:text-cream-300 md:text-lg">
+          <p
+            className="mb-10 mx-auto max-w-lg text-base leading-relaxed text-cream-200 md:text-lg"
+            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.85), 0 3px 18px rgba(0,0,0,0.5)" }}
+          >
             Describe your ideal trip and get a logistics-aware, day-by-day itinerary — with real stops, drive times, meals, and practical buffers.
           </p>
           <button
             type="button"
             onClick={() => planRef.current?.scrollIntoView({ behavior: "smooth" })}
-            className="rounded-full bg-gold-500 px-8 py-3.5 text-sm font-semibold text-forest-950 transition-all duration-200 hover:bg-gold-400 hover:shadow-lg hover:shadow-gold-500/25 cursor-pointer"
+            className="rounded-full bg-gold-500 px-8 py-3.5 text-sm font-semibold text-forest-950 transition-all duration-200 hover:bg-gold-400 hover:shadow-lg hover:shadow-gold-500/30 cursor-pointer"
+            style={{ filter: "drop-shadow(0 4px 16px rgba(201,160,40,0.35))" }}
           >
             Start planning →
           </button>
         </div>
 
-        {/* Scroll indicator */}
         <div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 text-forest-300 dark:text-cream-600 animate-fade-in"
-          style={{ animationDelay: "700ms" }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 text-cream-400 animate-fade-in"
+          style={{ animationDelay: "700ms", filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.8))" }}
         >
           <ChevronDown className="h-5 w-5 animate-bounce" />
         </div>
       </section>
 
-      {/* ── Plan (form) section ──────────────────────────────── */}
-      <div ref={planRef} className="bg-cream-100 dark:bg-forest-900 border-b border-cream-200 dark:border-forest-800 py-14">
+      {/* ── Form section — transparent, card floats over blurred+dark photo ── */}
+      <div ref={planRef} className="py-14">
         <div className="mx-auto max-w-2xl px-6">
           <div className="mb-8 text-center">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold-600 dark:text-gold-500">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold-400">
               Where to next?
             </p>
-            <h2 className="font-serif text-2xl font-semibold text-forest-900 dark:text-cream-100">
+            <h2 className="font-serif text-2xl font-semibold text-cream-100">
               Tell us about your trip
             </h2>
           </div>
@@ -173,15 +221,15 @@ export default function HomePage() {
       {/* ── Error banner ─────────────────────────────────────── */}
       {error && (
         <div className="mx-auto mt-6 max-w-4xl px-6 animate-slide-up">
-          <div className="flex items-start gap-3 rounded-2xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
+          <div className="flex items-start gap-3 rounded-2xl border border-red-800/50 bg-red-900/20 p-4 text-sm text-red-300">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <p>{error}</p>
           </div>
         </div>
       )}
 
-      {/* ── Results area ─────────────────────────────────────── */}
-      <div ref={resultsRef}>
+      {/* ── Results — solid bg takes over once a trip is generated ── */}
+      <div ref={resultsRef} className="bg-cream-100 dark:bg-forest-900 text-forest-900 dark:text-cream-100">
         {showRecommendations && (
           <RecommendationCards cards={recommendations} onSelect={handleSelectRecommendation} />
         )}
