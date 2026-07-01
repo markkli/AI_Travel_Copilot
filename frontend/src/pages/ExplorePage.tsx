@@ -52,7 +52,7 @@ export default function ExplorePage() {
   function toggleDuration(d: typeof DURATION_FILTERS[number]) { setDurationFilter(prev => prev?.label === d.label ? null : d); }
 
   return (
-    <div className="min-h-screen bg-cream-100 dark:bg-forest-900 text-forest-900 dark:text-cream-100 transition-colors">
+    <div className="min-h-screen bg-cream-100 dark:bg-forest-900 text-forest-900 dark:text-cream-100 transition-colors pt-16">
       {/* Page header */}
       <div className="border-b border-cream-200 dark:border-forest-800 bg-cream-50 dark:bg-forest-950 py-12">
         <div className="mx-auto max-w-6xl px-6">

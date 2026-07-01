@@ -26,7 +26,7 @@ function NavHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-cream-50/90 dark:bg-forest-950/90 backdrop-blur-md transition-colors">
+    <header className="fixed inset-x-0 top-0 z-40 bg-cream-50/90 dark:bg-forest-950/90 backdrop-blur-md transition-colors">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo — left */}
         <Link to="/" className="flex items-center gap-2.5">

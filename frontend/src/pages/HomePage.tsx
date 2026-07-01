@@ -143,17 +143,18 @@ export default function HomePage() {
         style={{ opacity: 0.18, willChange: "opacity" }}
       />
 
+      {/*
+        4. Vignette — fixed so it has no element boundary to clip against (no hairline seam).
+           Darkens the center of the viewport where the hero text lives; fades to nothing
+           before the form section, so the card below is unaffected.
+      */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{ background: "radial-gradient(ellipse 80% 60% at 50% 45%, rgba(6,16,11,0.48) 0%, rgba(6,16,11,0.06) 58%, transparent 75%)" }}
+      />
+
       {/* ── Hero — fully transparent, image/scrim show through ── */}
       <section className="relative flex min-h-dvh flex-col items-center justify-center">
-        {/*
-          Centered radial vignette — darkens exactly where the text lives,
-          fades to nothing at the edges so the photo still shows beautifully.
-          Classic cinema lighting trick: no hard edges, no card.
-        */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse 72% 78% at 50% 50%, rgba(6,16,11,0.58) 0%, rgba(6,16,11,0.18) 55%, transparent 80%)" }}
-        />
 
         <div className="relative z-10 mx-auto max-w-3xl px-6 text-center animate-fade-in">
           <p
