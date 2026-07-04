@@ -761,13 +761,13 @@ function OptionCard({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
+        <div className="flex items-center gap-2 mb-1">
           <span className="text-xs text-forest-400 font-medium uppercase tracking-wide">{config.label}</span>
           <span className="text-forest-700 text-xs">·</span>
           <span className="text-xs text-forest-400 tabular-nums">{option.duration_hours}h</span>
         </div>
-        <p className="font-serif font-semibold text-cream-100 leading-snug truncate">{option.title}</p>
-        <p className="text-xs text-forest-400 mt-0.5 truncate">{option.description}</p>
+        <p className="font-serif font-semibold text-cream-100 leading-snug line-clamp-2">{option.title}</p>
+        <p className="text-xs text-forest-400 mt-1 line-clamp-2 leading-relaxed">{option.description}</p>
       </div>
 
       {/* Option letter or check */}

@@ -5,60 +5,84 @@ import "leaflet/dist/leaflet.css";
 
 import type { CardOption, ChoiceMade } from "../api";
 
-// ── Custom div icons ──────────────────────────────────────────────────────────
+// ── Marker factories ──────────────────────────────────────────────────────────
 
-function makeIcon(html: string, size: number): L.DivIcon {
-  return L.divIcon({
-    className: "",
-    html,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
+function divIcon(html: string, size: number): L.DivIcon {
+  return L.divIcon({ className: "", html, iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 }
 
-const CHOSEN_ICON = makeIcon(
-  `<div style="width:14px;height:14px;border-radius:50%;background:#d4a017;border:2.5px solid #fff;box-shadow:0 0 10px rgba(212,160,23,0.7)"></div>`,
-  14,
+// Gold circle with day number — for locked-in stops
+function chosenMarker(dayNum: number): L.DivIcon {
+  return divIcon(
+    `<div style="
+      width:26px;height:26px;border-radius:50%;
+      background:linear-gradient(145deg,#e6b82a,#c89a14);
+      border:2px solid rgba(255,255,255,0.9);
+      box-shadow:0 2px 12px rgba(212,160,23,0.55),0 0 0 3px rgba(212,160,23,0.18);
+      display:flex;align-items:center;justify-content:center;
+      font-size:10px;font-weight:700;color:#1a1000;font-family:Georgia,serif;
+      line-height:1;
+    ">${dayNum}</div>`,
+    26,
+  );
+}
+
+// First stop — slightly different style
+const startMarker = divIcon(
+  `<div style="
+    width:22px;height:22px;border-radius:50%;
+    background:linear-gradient(145deg,#f0e4a8,#d4a017);
+    border:2px solid rgba(255,255,255,0.95);
+    box-shadow:0 2px 10px rgba(212,160,23,0.45),0 0 0 4px rgba(212,160,23,0.12);
+  "></div>`,
+  22,
 );
 
-const START_ICON = makeIcon(
-  `<div style="width:12px;height:12px;border-radius:50%;background:#f0e68c;border:2px solid #fff;box-shadow:0 0 8px rgba(240,230,140,0.8)"></div>`,
-  12,
-);
-
-const OPTION_COLORS = ["#60a5fa", "#fb923c", "#4ade80"]; // A=blue, B=amber, C=green
-
-function optionIcon(colorHex: string, letter: string): L.DivIcon {
-  return L.divIcon({
-    className: "",
-    html: `<div style="width:32px;height:32px;border-radius:50%;background:${colorHex};border:2.5px solid rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:sans-serif;">${letter}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
+// Option dots — minimal, glowing. Active = larger + brighter.
+function optionMarker(active: boolean): L.DivIcon {
+  if (active) {
+    return divIcon(
+      `<div style="
+        width:20px;height:20px;border-radius:50%;
+        background:radial-gradient(circle at 38% 38%,#f5d76e,#c89a14);
+        border:2px solid rgba(255,255,255,0.95);
+        box-shadow:0 0 0 4px rgba(212,160,23,0.25),0 2px 10px rgba(212,160,23,0.5);
+      "></div>`,
+      20,
+    );
+  }
+  return divIcon(
+    `<div style="
+      width:11px;height:11px;border-radius:50%;
+      background:rgba(240,228,168,0.55);
+      border:1.5px solid rgba(255,255,255,0.45);
+      box-shadow:0 1px 6px rgba(212,160,23,0.25);
+    "></div>`,
+    11,
+  );
 }
 
 // ── Auto-fit bounds ───────────────────────────────────────────────────────────
 
 function FitBounds({ positions }: { positions: [number, number][] }) {
   const map = useMap();
-  const prev = useRef<string>("");
+  const prev = useRef("");
 
   useEffect(() => {
     const key = JSON.stringify(positions);
     if (key === prev.current || positions.length === 0) return;
     prev.current = key;
-
     if (positions.length === 1) {
       map.setView(positions[0], 9, { animate: true });
     } else {
-      map.fitBounds(L.latLngBounds(positions), { padding: [56, 56], maxZoom: 9, animate: true });
+      map.fitBounds(L.latLngBounds(positions), { padding: [60, 60], maxZoom: 9, animate: true });
     }
   }, [positions, map]);
 
   return null;
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 type TripMapProps = {
   choices: ChoiceMade[];
@@ -67,30 +91,20 @@ type TripMapProps = {
   selectedOptionId: string | null;
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export default function TripMap({ choices, currentOptions, hoveredOptionId, selectedOptionId }: TripMapProps) {
-  // All chosen positions (lat/lng pairs that are non-zero)
   const chosenPositions: [number, number][] = choices
     .filter((c) => c.lat !== 0 || c.lng !== 0)
     .map((c) => [c.lat, c.lng]);
 
-  // Current options with coordinates
   const validOptions = currentOptions.filter((o) => o.lat !== 0 || o.lng !== 0);
+  const activeId = selectedOptionId ?? hoveredOptionId;
 
-  // All positions for auto-fit: chosen + current options
   const allPositions: [number, number][] = [
     ...chosenPositions,
     ...validOptions.map((o): [number, number] => [o.lat, o.lng]),
   ];
 
-  // Route line including a preview line to the active/hovered option
-  const activeId = selectedOptionId ?? hoveredOptionId;
-  const activeOption = validOptions.find((o) => o.id === activeId) ?? validOptions[0];
-  const previewLine: [number, number][] =
-    chosenPositions.length > 0 && activeOption
-      ? [chosenPositions[chosenPositions.length - 1], [activeOption.lat, activeOption.lng]]
-      : [];
+  const lastChosen = chosenPositions[chosenPositions.length - 1];
 
   return (
     <MapContainer
@@ -99,54 +113,55 @@ export default function TripMap({ choices, currentOptions, hoveredOptionId, sele
       zoomControl={false}
       attributionControl={false}
       className="h-full w-full"
-      style={{ background: "#0f1a14" }}
+      style={{ background: "#0c1510" }}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
         subdomains="abcd"
         maxZoom={19}
       />
 
       <FitBounds positions={allPositions.length > 0 ? allPositions : [[20, 0]]} />
 
-      {/* Chosen route — solid gold dashed line */}
+      {/* Chosen route line */}
       {chosenPositions.length > 1 && (
         <Polyline
           positions={chosenPositions}
-          pathOptions={{ color: "#d4a017", weight: 2.5, dashArray: "8 5", opacity: 0.9 }}
+          pathOptions={{ color: "#d4a017", weight: 2, dashArray: "7 5", opacity: 0.85 }}
         />
       )}
 
-      {/* Preview line to active option — faded */}
-      {previewLine.length === 2 && (
+      {/* Fan lines from last stop to each option — all faint */}
+      {lastChosen && validOptions.map((opt) => (
         <Polyline
-          positions={previewLine}
-          pathOptions={{ color: "#d4a017", weight: 1.5, dashArray: "4 6", opacity: 0.4 }}
+          key={`fan-${opt.id}`}
+          positions={[lastChosen, [opt.lat, opt.lng]]}
+          pathOptions={{
+            color: "#d4a017",
+            weight: opt.id === activeId ? 1.5 : 1,
+            dashArray: "3 7",
+            opacity: opt.id === activeId ? 0.45 : 0.18,
+          }}
         />
-      )}
+      ))}
 
       {/* Chosen stop markers */}
       {chosenPositions.map((pos, i) => (
-        <Marker key={`chosen-${i}`} position={pos} icon={i === 0 ? START_ICON : CHOSEN_ICON} />
+        <Marker
+          key={`chosen-${i}`}
+          position={pos}
+          icon={i === 0 ? startMarker : chosenMarker(i + 1)}
+        />
       ))}
 
-      {/* Current option markers */}
-      {validOptions.map((opt, i) => {
-        const isActive = opt.id === (selectedOptionId ?? hoveredOptionId);
-        const color = OPTION_COLORS[i] ?? OPTION_COLORS[0];
-        const letter = opt.id.toUpperCase();
-        const icon = optionIcon(color, letter);
-
-        return (
-          <Marker
-            key={`opt-${opt.id}`}
-            position={[opt.lat, opt.lng]}
-            icon={icon}
-            opacity={isActive ? 1 : 0.55}
-          />
-        );
-      })}
+      {/* Option markers — active one is bigger and brighter */}
+      {validOptions.map((opt) => (
+        <Marker
+          key={`opt-${opt.id}`}
+          position={[opt.lat, opt.lng]}
+          icon={optionMarker(opt.id === activeId)}
+        />
+      ))}
     </MapContainer>
   );
 }

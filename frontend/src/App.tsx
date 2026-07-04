@@ -28,29 +28,29 @@ function NavHeader() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 bg-cream-50/90 dark:bg-forest-950/90 backdrop-blur-md transition-colors">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        {/* Logo — left */}
-        <Link to="/" className="flex items-center gap-2.5">
+      <div className="flex items-center justify-between px-6 py-4">
+        {/* Logo — always flush left */}
+        <Link to="/" className="flex items-center gap-2.5 flex-none">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-forest-900 dark:bg-gold-500/15 ring-1 ring-forest-900/10 dark:ring-gold-500/30">
             <MapPin className="h-4 w-4 text-cream-100 dark:text-gold-400" strokeWidth={2} />
           </div>
-          <span className="font-serif text-lg font-semibold text-forest-900 dark:text-cream-100">
+          <span className="font-serif text-lg font-semibold text-forest-900 dark:text-cream-100 whitespace-nowrap">
             AI Travel Copilot
           </span>
         </Link>
 
-        {/* Right side — nav + badge together */}
-        <div className="flex items-center gap-6">
-          {/* Desktop nav links */}
-          <nav className="hidden items-center gap-6 sm:flex">
+        {/* Right side — nav + badge */}
+        <div className="flex items-center gap-4">
+          {/* Desktop nav links — md and up */}
+          <nav className="hidden items-center gap-4 md:flex">
             {navLink("/", "Plan")}
             {navLink("/generate", "Generator")}
             {navLink("/explore", "Explore")}
             {navLink("/community", "Community")}
           </nav>
 
-          {/* Mobile nav icons */}
-          <div className="flex items-center gap-3 sm:hidden">
+          {/* Mobile/tablet nav icons */}
+          <div className="flex items-center gap-3 md:hidden">
             <Link to="/" aria-label="Plan">
               <Sparkles className="h-5 w-5 text-forest-500 dark:text-forest-400" />
             </Link>
@@ -65,7 +65,7 @@ function NavHeader() {
             </Link>
           </div>
 
-          <span className="rounded-full border border-gold-600/40 dark:border-gold-500/40 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest text-gold-600 dark:text-gold-500">
+          <span className="rounded-full border border-gold-600/40 dark:border-gold-500/40 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest text-gold-600 dark:text-gold-500 flex-none">
             Beta
           </span>
         </div>
