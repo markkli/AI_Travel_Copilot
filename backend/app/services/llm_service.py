@@ -345,36 +345,48 @@ class LLMService:
         from openai import OpenAI
 
         trip_days = (request.end_date - request.start_date).days + 1
-        target_steps = trip_days * 2 + 1
+        target_steps = trip_days  # one decision per day
         steps_done = len(request.choices_made)
         steps_left = max(0, target_steps - steps_done - 1)
+        is_final = steps_left <= 0
+
+        scale_hint = {
+            "city": "Each option should be a different neighborhood, area, or activity cluster within the city.",
+            "regional": "Each option should be a different town, park, or regional destination reachable in a day.",
+            "international": "Each option should be a different city or major region to spend the day in.",
+        }.get(request.trip_scale, "Each option should represent a meaningfully different place or experience.")
+
+        vibes_hint = f"Traveler vibes: {', '.join(request.vibes)}." if request.vibes else ""
 
         choices_summary = ""
         if request.choices_made:
-            choices_summary = "Choices made so far:\n" + "\n".join(
-                f"  Step {c.step}: {c.title} — {c.description} → ended at {c.next_location}"
+            choices_summary = "Days already planned:\n" + "\n".join(
+                f"  Day {c.step}: {c.title} → {c.next_location}"
                 for c in request.choices_made
             )
 
-        is_final = steps_left <= 0
         system_prompt = (
-            "You are running an interactive travel planning game. "
-            "Generate exactly 3 meaningfully different options for the traveler's next decision. "
-            "Options must be specific to the destination with real place names — not generic. "
-            "Make each option reflect a distinct priority (e.g. scenic, practical, food/rest, adventure). "
-            "Use SegmentType values: activity, drive, meal, lodging, viewpoint, buffer."
+            "You are running an interactive day-by-day trip planner. "
+            "Each option represents a FULL DAY's experience — not a single activity. "
+            "Generate exactly 3 meaningfully different options for the traveler's next day. "
+            "Each option must use real place names specific to the destination. "
+            "Make each option reflect a distinct day-experience: adventure vs. culture vs. relaxation, "
+            "or different locations/regions the traveler could head to. "
+            f"{scale_hint} "
+            "For lat/lng: provide accurate approximate coordinates for each option's primary location. "
+            "Use segment_type: activity, drive, viewpoint for day-trips; lodging for rest days."
         )
         user_prompt = (
-            f"Trip: {request.destination}"
-            f"\nFrom: {request.origin or 'flexible'}"
-            f"\nDates: {request.start_date} to {request.end_date} ({trip_days} days)"
-            f"\nTravelers: {request.num_travelers}, Budget: {request.budget_level}"
-            f"\nCurrent state: Day {request.current_day}, {request.current_time}, "
-            f"at {request.current_location or request.destination + ' arrival area'}"
-            f"\n{choices_summary}"
-            f"\nSteps completed: {steps_done}. Target total steps: {target_steps}."
-            + ("\nThis should be the FINAL decision — set is_final_step=true." if is_final else
-               f"\nApproximately {steps_left} steps remain after this one.")
+            f"Trip to: {request.destination}"
+            + (f" (from {request.origin})" if request.origin else "")
+            + f"\nDates: {request.start_date} to {request.end_date} ({trip_days} days total)"
+            + f"\nTravelers: {request.num_travelers}, Budget: {request.budget_level}"
+            + (f"\n{vibes_hint}" if vibes_hint else "")
+            + f"\nCurrently at: {request.current_location or request.destination}"
+            + f"\n{choices_summary}"
+            + f"\nPlanning day {steps_done + 1} of {trip_days}."
+            + ("\nThis is the LAST day — set is_final_step=true." if is_final else
+               f" {steps_left} day(s) remain after this.")
         )
 
         client = OpenAI(api_key=self.settings.openai_api_key)
@@ -394,38 +406,45 @@ class LLMService:
     def _mock_card_step(self, request: NextCardsRequest) -> CardStepLLM:
         trip_days = (request.end_date - request.start_date).days + 1
         steps_done = len(request.choices_made)
-        target_steps = trip_days * 2 + 1
+        target_steps = trip_days
         is_final = steps_done >= target_steps - 1
         dest = request.destination
         loc = request.current_location or dest
+        day_num = steps_done + 1
 
         return CardStepLLM(
-            context=f"Day {request.current_day}, {request.current_time}. You're at {loc}.",
-            prompt="What would you like to do next?",
+            context=f"Day {day_num} of {trip_days}. You're based in {loc}.",
+            prompt=f"How do you want to spend Day {day_num}?",
             options=[
                 CardOptionLLM(
                     title=f"Explore {dest} highlights",
-                    description=f"Visit the main sights and walkable areas in {dest}.",
+                    description=f"Hit the iconic sights, walkable neighborhoods, and hidden gems of {dest}.",
                     segment_type=SegmentType.ACTIVITY,
-                    duration_hours=2.5,
+                    duration_hours=10.0,
                     next_location=loc,
-                    tags=["scenic", "walkable"],
+                    lat=0.0,
+                    lng=0.0,
+                    tags=["sightseeing", "walkable"],
                 ),
                 CardOptionLLM(
-                    title="Grab a local meal",
-                    description="Find a well-rated local restaurant for a relaxed meal.",
-                    segment_type=SegmentType.MEAL,
-                    duration_hours=1.5,
+                    title=f"Nature day outside {dest}",
+                    description="Escape the city for a nearby park, trail, or scenic viewpoint.",
+                    segment_type=SegmentType.VIEWPOINT,
+                    duration_hours=9.0,
                     next_location=loc,
-                    tags=["food", "local"],
+                    lat=0.0,
+                    lng=0.0,
+                    tags=["nature", "outdoors"],
                 ),
                 CardOptionLLM(
-                    title="Check in and rest",
-                    description="Head to your lodging, drop bags, and plan the next move.",
-                    segment_type=SegmentType.LODGING,
-                    duration_hours=1.0,
+                    title="Food, culture, and slow morning",
+                    description="Markets, museums, local lunch spots — a relaxed immersive day.",
+                    segment_type=SegmentType.ACTIVITY,
+                    duration_hours=8.0,
                     next_location=loc,
-                    tags=["rest"],
+                    lat=0.0,
+                    lng=0.0,
+                    tags=["food", "culture"],
                 ),
             ],
             is_final_step=is_final,

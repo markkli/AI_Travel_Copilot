@@ -9,6 +9,8 @@ export type CardOption = {
   segment_type: string;
   duration_hours: number;
   next_location: string;
+  lat: number;
+  lng: number;
   tags: string[];
 };
 
@@ -29,6 +31,8 @@ export type ChoiceMade = {
   segment_type: string;
   duration_hours: number;
   next_location: string;
+  lat: number;
+  lng: number;
 };
 
 export type NextCardsPayload = {
@@ -38,9 +42,10 @@ export type NextCardsPayload = {
   end_date: string;
   num_travelers: number;
   budget_level: string;
+  trip_scale: string;
+  vibes: string[];
   choices_made: ChoiceMade[];
   current_day: number;
-  current_time: string;
   current_location: string;
 };
 
