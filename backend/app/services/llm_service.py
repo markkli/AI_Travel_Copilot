@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from app.core.config import Settings, get_settings
+from app.schemas.card import CardOption, CardStep, CardStepLLM, CardOptionLLM, NextCardsRequest
 from app.schemas.common import BudgetLevel, SegmentType
 from app.schemas.trip import GenerateTripRequest, TripDraftRequest, TripIntent, TripPlan
 
@@ -315,6 +316,123 @@ class LLMService:
                 "constraints_satisfied": ["scenic", "photography"],
             },
         ]
+
+    # ── Card-flow methods ─────────────────────────────────────────────────────
+
+    def generate_next_cards(self, request: NextCardsRequest) -> CardStep:
+        if self.settings.llm_mode == "openai":
+            llm_result = self._generate_cards_with_openai(request)
+        else:
+            llm_result = self._mock_card_step(request)
+
+        options_with_ids = [
+            CardOption(**opt.model_dump(), id=chr(ord("a") + i))
+            for i, opt in enumerate(llm_result.options)
+        ]
+        return CardStep(
+            step_number=len(request.choices_made) + 1,
+            context=llm_result.context,
+            prompt=llm_result.prompt,
+            options=options_with_ids,
+            is_final_step=llm_result.is_final_step,
+            estimated_remaining_steps=llm_result.estimated_remaining_steps,
+        )
+
+    def _generate_cards_with_openai(self, request: NextCardsRequest) -> CardStepLLM:
+        if not self.settings.openai_api_key:
+            raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
+
+        from openai import OpenAI
+
+        trip_days = (request.end_date - request.start_date).days + 1
+        target_steps = trip_days * 2 + 1
+        steps_done = len(request.choices_made)
+        steps_left = max(0, target_steps - steps_done - 1)
+
+        choices_summary = ""
+        if request.choices_made:
+            choices_summary = "Choices made so far:\n" + "\n".join(
+                f"  Step {c.step}: {c.title} — {c.description} → ended at {c.next_location}"
+                for c in request.choices_made
+            )
+
+        is_final = steps_left <= 0
+        system_prompt = (
+            "You are running an interactive travel planning game. "
+            "Generate exactly 3 meaningfully different options for the traveler's next decision. "
+            "Options must be specific to the destination with real place names — not generic. "
+            "Make each option reflect a distinct priority (e.g. scenic, practical, food/rest, adventure). "
+            "Use SegmentType values: activity, drive, meal, lodging, viewpoint, buffer."
+        )
+        user_prompt = (
+            f"Trip: {request.destination}"
+            f"\nFrom: {request.origin or 'flexible'}"
+            f"\nDates: {request.start_date} to {request.end_date} ({trip_days} days)"
+            f"\nTravelers: {request.num_travelers}, Budget: {request.budget_level}"
+            f"\nCurrent state: Day {request.current_day}, {request.current_time}, "
+            f"at {request.current_location or request.destination + ' arrival area'}"
+            f"\n{choices_summary}"
+            f"\nSteps completed: {steps_done}. Target total steps: {target_steps}."
+            + ("\nThis should be the FINAL decision — set is_final_step=true." if is_final else
+               f"\nApproximately {steps_left} steps remain after this one.")
+        )
+
+        client = OpenAI(api_key=self.settings.openai_api_key)
+        completion = client.beta.chat.completions.parse(
+            model=self.settings.openai_normalization_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format=CardStepLLM,
+        )
+        result = completion.choices[0].message.parsed
+        if result is None:
+            raise ValueError("Card generation returned no result")
+        return result
+
+    def _mock_card_step(self, request: NextCardsRequest) -> CardStepLLM:
+        trip_days = (request.end_date - request.start_date).days + 1
+        steps_done = len(request.choices_made)
+        target_steps = trip_days * 2 + 1
+        is_final = steps_done >= target_steps - 1
+        dest = request.destination
+        loc = request.current_location or dest
+
+        return CardStepLLM(
+            context=f"Day {request.current_day}, {request.current_time}. You're at {loc}.",
+            prompt="What would you like to do next?",
+            options=[
+                CardOptionLLM(
+                    title=f"Explore {dest} highlights",
+                    description=f"Visit the main sights and walkable areas in {dest}.",
+                    segment_type=SegmentType.ACTIVITY,
+                    duration_hours=2.5,
+                    next_location=loc,
+                    tags=["scenic", "walkable"],
+                ),
+                CardOptionLLM(
+                    title="Grab a local meal",
+                    description="Find a well-rated local restaurant for a relaxed meal.",
+                    segment_type=SegmentType.MEAL,
+                    duration_hours=1.5,
+                    next_location=loc,
+                    tags=["food", "local"],
+                ),
+                CardOptionLLM(
+                    title="Check in and rest",
+                    description="Head to your lodging, drop bags, and plan the next move.",
+                    segment_type=SegmentType.LODGING,
+                    duration_hours=1.0,
+                    next_location=loc,
+                    tags=["rest"],
+                ),
+            ],
+            is_final_step=is_final,
+            estimated_remaining_steps=max(0, target_steps - steps_done - 1),
+        )
+
+    # ── Helpers ───────────────────────────────────────────────────────────────
 
     def _infer_destination_region(self, query: str) -> str:
         normalized_query = query.lower()

@@ -1,5 +1,49 @@
 import type { GenerateTripRequest, RecommendationCard, TripDraftRequest, TripPlan } from "./types";
 
+// ── Card-flow types ───────────────────────────────────────────────────────────
+
+export type CardOption = {
+  id: string;
+  title: string;
+  description: string;
+  segment_type: string;
+  duration_hours: number;
+  next_location: string;
+  tags: string[];
+};
+
+export type CardStep = {
+  step_number: number;
+  context: string;
+  prompt: string;
+  options: CardOption[];
+  is_final_step: boolean;
+  estimated_remaining_steps: number;
+};
+
+export type ChoiceMade = {
+  step: number;
+  card_id: string;
+  title: string;
+  description: string;
+  segment_type: string;
+  duration_hours: number;
+  next_location: string;
+};
+
+export type NextCardsPayload = {
+  destination: string;
+  origin?: string | null;
+  start_date: string;
+  end_date: string;
+  num_travelers: number;
+  budget_level: string;
+  choices_made: ChoiceMade[];
+  current_day: number;
+  current_time: string;
+  current_location: string;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
 async function requestJson<T>(path: string, options?: RequestInit): Promise<T> {
@@ -107,6 +151,13 @@ function parseServerSentEvent(rawEvent: string): { event: string; data: string }
     event: eventLine.slice("event: ".length),
     data: dataLine.slice("data: ".length),
   };
+}
+
+export function fetchNextCards(payload: NextCardsPayload): Promise<CardStep> {
+  return requestJson<CardStep>("/trip/next-cards", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function refineTrip(existingItinerary: TripPlan, userFeedback: string): Promise<TripPlan> {

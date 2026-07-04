@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+from app.schemas.card import CardStep, NextCardsRequest
 from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripDraftRequest, TripIntent, TripPlan
 from app.services.trip_service import TripService
 
@@ -33,6 +34,11 @@ def stream_trip_from_draft(request: TripDraftRequest) -> StreamingResponse:
         trip_service.stream_trip_from_draft(request),
         media_type="text/event-stream",
     )
+
+
+@router.post("/next-cards", response_model=CardStep)
+def get_next_cards(request: NextCardsRequest) -> CardStep:
+    return trip_service.get_next_cards(request)
 
 
 @router.post("/refine", response_model=TripPlan)

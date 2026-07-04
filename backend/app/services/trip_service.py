@@ -2,6 +2,7 @@ import json
 from collections.abc import Iterator
 
 from app.prompts.itinerary_prompt import build_itinerary_prompt, build_refinement_prompt
+from app.schemas.card import CardStep, NextCardsRequest
 from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripDraftRequest, TripIntent, TripPlan
 from app.services.llm_service import LLMService
 from app.services.retrieval_service import RetrievalService
@@ -49,6 +50,9 @@ class TripService:
         validated_trip = TripPlan.model_validate(trip_plan.model_dump())
 
         yield self._sse("result", validated_trip.model_dump(mode="json"))
+
+    def get_next_cards(self, request: NextCardsRequest) -> CardStep:
+        return self.llm_service.generate_next_cards(request)
 
     def refine_trip(self, request: RefineTripRequest) -> TripPlan:
         prompt = build_refinement_prompt(request.existing_itinerary, request.user_feedback)

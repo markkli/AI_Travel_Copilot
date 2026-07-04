@@ -1,6 +1,7 @@
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { MapPin, Compass, Users } from "lucide-react";
+import { MapPin, Compass, Users, Sparkles, Wand2 } from "lucide-react";
 
+import TripBuilderPage from "./pages/TripBuilderPage";
 import HomePage from "./pages/HomePage";
 import ExplorePage from "./pages/ExplorePage";
 import CommunityPage from "./pages/CommunityPage";
@@ -42,12 +43,20 @@ function NavHeader() {
         <div className="flex items-center gap-6">
           {/* Desktop nav links */}
           <nav className="hidden items-center gap-6 sm:flex">
+            {navLink("/", "Plan")}
+            {navLink("/generate", "Generator")}
             {navLink("/explore", "Explore")}
             {navLink("/community", "Community")}
           </nav>
 
           {/* Mobile nav icons */}
           <div className="flex items-center gap-3 sm:hidden">
+            <Link to="/" aria-label="Plan">
+              <Sparkles className="h-5 w-5 text-forest-500 dark:text-forest-400" />
+            </Link>
+            <Link to="/generate" aria-label="Generator">
+              <Wand2 className="h-5 w-5 text-forest-500 dark:text-forest-400" />
+            </Link>
             <Link to="/explore" aria-label="Explore">
               <Compass className="h-5 w-5 text-forest-500 dark:text-forest-400" />
             </Link>
@@ -70,7 +79,8 @@ export default function App() {
     <div className="min-h-dvh font-sans">
       <NavHeader />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<TripBuilderPage />} />
+        <Route path="/generate" element={<HomePage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/community" element={<CommunityPage />} />
       </Routes>
