@@ -1,6 +1,9 @@
 from datetime import date, timedelta
 from app.core.config import Settings, get_settings
-from app.schemas.card import CardOption, CardStep, CardStepLLM, CardOptionLLM, NextCardsRequest
+from app.schemas.card import (
+    CardOption, CardStep, CardStepLLM, CardOptionLLM, NextCardsRequest,
+    AlternativeSegment, AlternativeSegmentsRequest, AlternativeSegmentsResponse,
+)
 from app.schemas.common import BudgetLevel, SegmentType
 from app.schemas.trip import GenerateTripRequest, TripDraftRequest, TripIntent, TripPlan
 
@@ -449,6 +452,82 @@ class LLMService:
             ],
             is_final_step=is_final,
             estimated_remaining_steps=max(0, target_steps - steps_done - 1),
+        )
+
+    # ── Alternative segments ──────────────────────────────────────────────────
+
+    def suggest_alternative_segments(self, request: AlternativeSegmentsRequest) -> AlternativeSegmentsResponse:
+        if self.settings.llm_mode == "openai":
+            return self._alternatives_with_openai(request)
+        return self._mock_alternatives(request)
+
+    def _alternatives_with_openai(self, request: AlternativeSegmentsRequest) -> AlternativeSegmentsResponse:
+        if not self.settings.openai_api_key:
+            raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
+
+        from openai import OpenAI
+
+        client = OpenAI(api_key=self.settings.openai_api_key)
+        system_prompt = (
+            "You are a travel planning assistant. "
+            "Suggest exactly 3 alternative activities for the given time slot. "
+            "Each alternative must be meaningfully different from the current segment. "
+            "Use real place names specific to the destination. "
+            "Keep the same time range. Vary the type of experience across options."
+        )
+        user_prompt = (
+            f"Destination: {request.destination}"
+            + f"\nDay {request.day_number}"
+            + (f" ({request.day_date})" if request.day_date else "")
+            + f"\nCurrent: {request.current_title} ({request.segment_type})"
+            + f"\nTime slot: {request.start_time} to {request.end_time}"
+            + f"\nBudget: {request.budget_level}"
+            + f"\nDescription: {request.current_description}"
+            + "\n\nSuggest 3 different alternatives for this exact time slot."
+        )
+        completion = client.beta.chat.completions.parse(
+            model=self.settings.openai_normalization_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format=AlternativeSegmentsResponse,
+        )
+        result = completion.choices[0].message.parsed
+        if result is None:
+            raise ValueError("Alternatives generation returned no result")
+        return result
+
+    def _mock_alternatives(self, request: AlternativeSegmentsRequest) -> AlternativeSegmentsResponse:
+        dest = request.destination
+        t0, t1 = request.start_time, request.end_time
+        return AlternativeSegmentsResponse(
+            alternatives=[
+                AlternativeSegment(
+                    title=f"Local market & street food in {dest}",
+                    description="Browse artisan stalls and sample street food at a neighborhood market.",
+                    segment_type=SegmentType.ACTIVITY,
+                    start_time=t0,
+                    end_time=t1,
+                    cost_estimate="$20–50",
+                ),
+                AlternativeSegment(
+                    title=f"Scenic overlook hike near {dest}",
+                    description="A moderate trail to a panoramic viewpoint with sweeping landscape views.",
+                    segment_type=SegmentType.VIEWPOINT,
+                    start_time=t0,
+                    end_time=t1,
+                    cost_estimate="Free",
+                ),
+                AlternativeSegment(
+                    title=f"Cultural museum visit in {dest}",
+                    description="Explore local history, art, or science at a top-rated museum.",
+                    segment_type=SegmentType.ACTIVITY,
+                    start_time=t0,
+                    end_time=t1,
+                    cost_estimate="$15–30",
+                ),
+            ]
         )
 
     # ── Helpers ───────────────────────────────────────────────────────────────

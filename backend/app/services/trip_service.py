@@ -2,7 +2,7 @@ import json
 from collections.abc import Iterator
 
 from app.prompts.itinerary_prompt import build_itinerary_prompt, build_refinement_prompt
-from app.schemas.card import CardStep, NextCardsRequest
+from app.schemas.card import CardStep, NextCardsRequest, AlternativeSegmentsRequest, AlternativeSegmentsResponse
 from app.schemas.trip import GenerateTripRequest, RefineTripRequest, TripDraftRequest, TripIntent, TripPlan
 from app.services.llm_service import LLMService
 from app.services.retrieval_service import RetrievalService
@@ -53,6 +53,9 @@ class TripService:
 
     def get_next_cards(self, request: NextCardsRequest) -> CardStep:
         return self.llm_service.generate_next_cards(request)
+
+    def suggest_alternative_segments(self, request: AlternativeSegmentsRequest) -> AlternativeSegmentsResponse:
+        return self.llm_service.suggest_alternative_segments(request)
 
     def refine_trip(self, request: RefineTripRequest) -> TripPlan:
         prompt = build_refinement_prompt(request.existing_itinerary, request.user_feedback)

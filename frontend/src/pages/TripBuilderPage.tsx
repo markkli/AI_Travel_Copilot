@@ -8,8 +8,8 @@ import {
 import { fetchNextCards, streamTripFromDraft } from "../api";
 import type { CardOption, CardStep, ChoiceMade } from "../api";
 import GenerationStatus, { type GenerationStep } from "../components/GenerationStatus";
-import ItineraryTimeline from "../components/ItineraryTimeline";
 import TripMap from "../components/TripMap";
+import TripCalendarView from "../components/TripCalendarView";
 import type { TripDraftRequest, TripPlan, BudgetLevel } from "../types";
 
 // ── Segment config ─────────────────────────────────────────────────────────────
@@ -365,8 +365,8 @@ export default function TripBuilderPage() {
       )}
 
       {phase === "complete" && trip && (
-        <div className="bg-cream-100 dark:bg-forest-900 pt-20">
-          <ItineraryTimeline trip={trip} />
+        <div className="fixed inset-0 bg-cream-50 dark:bg-forest-950 text-forest-900 dark:text-cream-100 flex flex-col" style={{ paddingTop: "64px" }}>
+          <TripCalendarView trip={trip} />
         </div>
       )}
     </div>

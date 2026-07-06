@@ -59,3 +59,28 @@ class NextCardsRequest(BaseModel):
     choices_made: list[ChoiceMade] = Field(default_factory=list)
     current_day: int = Field(default=1, ge=1)
     current_location: str = ""
+
+
+class AlternativeSegment(BaseModel):
+    title: str
+    description: str
+    segment_type: SegmentType
+    start_time: str
+    end_time: str
+    cost_estimate: str | None = None
+
+
+class AlternativeSegmentsRequest(BaseModel):
+    destination: str
+    day_number: int
+    day_date: str | None = None
+    segment_type: str
+    current_title: str
+    current_description: str
+    start_time: str
+    end_time: str
+    budget_level: str = "medium"
+
+
+class AlternativeSegmentsResponse(BaseModel):
+    alternatives: list[AlternativeSegment] = Field(min_length=2, max_length=4)

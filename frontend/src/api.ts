@@ -165,6 +165,36 @@ export function fetchNextCards(payload: NextCardsPayload): Promise<CardStep> {
   });
 }
 
+export type AlternativeSeg = {
+  title: string;
+  description: string;
+  segment_type: string;
+  start_time: string;
+  end_time: string;
+  cost_estimate?: string | null;
+};
+
+export type SuggestAlternativesPayload = {
+  destination: string;
+  day_number: number;
+  day_date?: string | null;
+  segment_type: string;
+  current_title: string;
+  current_description: string;
+  start_time: string;
+  end_time: string;
+  budget_level?: string;
+};
+
+export function suggestAlternatives(
+  payload: SuggestAlternativesPayload,
+): Promise<{ alternatives: AlternativeSeg[] }> {
+  return requestJson<{ alternatives: AlternativeSeg[] }>("/trip/suggest-alternatives", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function refineTrip(existingItinerary: TripPlan, userFeedback: string): Promise<TripPlan> {
   return requestJson<TripPlan>("/trip/refine", {
     method: "POST",
