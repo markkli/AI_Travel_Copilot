@@ -2,10 +2,10 @@ import { useState, useRef, useEffect, type FormEvent, type ElementType } from "r
 import {
   Plane, Car, Mountain, Utensils, BedDouble, Eye, Train, Clock,
   ArrowLeft, AlertCircle, MapPin, ChevronDown, Check, Calendar,
-  Globe, Map as MapIcon, Building2,
+  Globe, Map as MapIcon, Building2, X, Star, ArrowRight,
 } from "lucide-react";
 
-import { fetchNextCards, streamTripFromDraft } from "../api";
+import { fetchNextCards, streamTripFromDraft, generateCustomCard } from "../api";
 import type { CardOption, CardStep, ChoiceMade } from "../api";
 import GenerationStatus, { type GenerationStep } from "../components/GenerationStatus";
 import TripMap from "../components/TripMap";
@@ -74,6 +74,8 @@ type HistoryEntry = {
   prevLocation: string;
 };
 
+type PendingMapPoint = { lat: number; lng: number; name: string };
+
 // ── Root component ────────────────────────────────────────────────────────────
 
 export default function TripBuilderPage() {
@@ -94,6 +96,11 @@ export default function TripBuilderPage() {
   const [hoveredId, setHoveredId]           = useState<string | null>(null);
   const [isFetching, setIsFetching]         = useState(false);
   const [cardError, setCardError]           = useState<string | null>(null);
+
+  // Custom card state
+  const [customCard, setCustomCard]             = useState<CardOption | null>(null);
+  const [customCardLoading, setCustomCardLoading] = useState(false);
+  const [pendingMapPoint, setPendingMapPoint]   = useState<PendingMapPoint | null>(null);
 
   // Prefetch cache: card_id → promise of next CardStep
   const prefetchCache = useRef<Map<string, Promise<CardStep>>>(new Map());
@@ -188,6 +195,8 @@ export default function TripBuilderPage() {
     setCurrentStep(null);
     setSelectedId(null);
     setHoveredId(null);
+    setCustomCard(null);
+    setPendingMapPoint(null);
     try {
       const step = await (cachedPromise ?? fetchNextCards(buildPayload(p, choices, day, location)));
       setCurrentStep(step);
@@ -205,6 +214,8 @@ export default function TripBuilderPage() {
     setCurrentDay(1);
     setCurrentLocation(p.destination);
     setCardError(null);
+    setCustomCard(null);
+    setPendingMapPoint(null);
     prefetchCache.current.clear();
     setPhase("building");
     await loadNextStep(p, [], 1, p.destination);
@@ -217,7 +228,12 @@ export default function TripBuilderPage() {
 
   async function handleConfirm() {
     if (!selectedId || !currentStep || !params) return;
-    const chosen = currentStep.options.find((o) => o.id === selectedId)!;
+
+    const chosen: CardOption = selectedId === "custom" && customCard
+      ? customCard
+      : currentStep.options.find((o) => o.id === selectedId)!;
+
+    if (!chosen) return;
 
     const choice: ChoiceMade = {
       step:          currentStep.step_number,
@@ -247,7 +263,7 @@ export default function TripBuilderPage() {
     if (currentStep.is_final_step) {
       await assembleItinerary(params, newChoices);
     } else {
-      const cached = prefetchCache.current.get(selectedId);
+      const cached = selectedId !== "custom" ? prefetchCache.current.get(selectedId) : undefined;
       prefetchCache.current.clear();
       await loadNextStep(params, newChoices, nextDay, nextLocation, cached);
     }
@@ -264,7 +280,53 @@ export default function TripBuilderPage() {
     setSelectedId(null);
     setHoveredId(null);
     setCardError(null);
+    setCustomCard(null);
+    setPendingMapPoint(null);
     prefetchCache.current.clear();
+  }
+
+  async function handleCustomLocation(location: string, lat?: number, lng?: number) {
+    if (!params || !location.trim()) return;
+    setCustomCardLoading(true);
+    setCustomCard(null);
+    setPendingMapPoint(null);
+    try {
+      const card = await generateCustomCard({
+        destination:    params.destination,
+        custom_location: location.trim(),
+        day_number:     currentDay,
+        trip_days:      tripDays ?? 3,
+        budget_level:   params.budget_level,
+        vibes:          params.vibes,
+        choices_made:   choicesMade,
+        lat:            lat ?? null,
+        lng:            lng ?? null,
+      });
+      setCustomCard(card);
+    } catch (err) {
+      console.error("Custom card error:", err);
+    } finally {
+      setCustomCardLoading(false);
+    }
+  }
+
+  async function handleMapClick(lat: number, lng: number) {
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
+        { headers: { "User-Agent": "Lopan-TripPlanner/1.0" } },
+      );
+      const data = await resp.json() as Record<string, unknown>;
+      const address = (data.address ?? {}) as Record<string, string>;
+      const name =
+        address.city || address.town || address.village || address.county ||
+        (typeof data.display_name === "string"
+          ? data.display_name.split(",")[0]
+          : `${lat.toFixed(2)}, ${lng.toFixed(2)}`);
+      setPendingMapPoint({ lat, lng, name });
+    } catch {
+      setPendingMapPoint({ lat, lng, name: `${lat.toFixed(2)}°, ${lng.toFixed(2)}°` });
+    }
   }
 
   async function assembleItinerary(p: TripParams, choices: ChoiceMade[]) {
@@ -342,10 +404,18 @@ export default function TripBuilderPage() {
           isFetching={isFetching}
           error={cardError}
           canGoBack={history.length > 0}
+          customCard={customCard}
+          customCardLoading={customCardLoading}
+          pendingMapPoint={pendingMapPoint}
           onSelect={handleSelectCard}
           onHover={setHoveredId}
           onConfirm={handleConfirm}
           onBack={handleBack}
+          onCustomSubmit={handleCustomLocation}
+          onGeneratePending={() => pendingMapPoint && handleCustomLocation(pendingMapPoint.name, pendingMapPoint.lat, pendingMapPoint.lng)}
+          onDismissPending={() => setPendingMapPoint(null)}
+          onClearCustomCard={() => { setCustomCard(null); if (selectedId === "custom") setSelectedId(null); }}
+          onMapClick={handleMapClick}
         />
       )}
 
@@ -599,16 +669,26 @@ type BuildingPhaseProps = {
   isFetching: boolean;
   error: string | null;
   canGoBack: boolean;
+  customCard: CardOption | null;
+  customCardLoading: boolean;
+  pendingMapPoint: PendingMapPoint | null;
   onSelect: (id: string) => void;
   onHover: (id: string | null) => void;
   onConfirm: () => void;
   onBack: () => void;
+  onCustomSubmit: (location: string) => void;
+  onGeneratePending: () => void;
+  onDismissPending: () => void;
+  onClearCustomCard: () => void;
+  onMapClick: (lat: number, lng: number) => void;
 };
 
 function BuildingPhase({
   step, choicesMade, currentDay, tripDays, currentLocation,
   selectedId, hoveredId, isFetching, error, canGoBack,
+  customCard, customCardLoading, pendingMapPoint,
   onSelect, onHover, onConfirm, onBack,
+  onCustomSubmit, onGeneratePending, onDismissPending, onClearCustomCard, onMapClick,
 }: BuildingPhaseProps) {
   const total = tripDays ?? (step ? step.step_number + step.estimated_remaining_steps : choicesMade.length + 4);
 
@@ -695,13 +775,85 @@ function BuildingPhase({
                 ))}
               </div>
 
+              {/* Custom destination section */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-forest-800/60" />
+                  <span className="text-xs text-forest-600 flex-none">or go somewhere specific</span>
+                  <div className="flex-1 h-px bg-forest-800/60" />
+                </div>
+
+                {/* Pending map point */}
+                {pendingMapPoint && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-gold-500/30 bg-gold-500/8 px-4 py-3">
+                    <MapPin className="h-4 w-4 text-gold-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-cream-200 truncate">{pendingMapPoint.name}</p>
+                      <p className="text-xs text-forest-500">Plan a day here?</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={onGeneratePending}
+                        disabled={customCardLoading}
+                        className="text-xs font-semibold text-gold-400 hover:text-gold-300 transition-colors cursor-pointer disabled:opacity-40"
+                      >
+                        Generate →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onDismissPending}
+                        className="text-forest-600 hover:text-forest-300 transition-colors cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Custom card loading skeleton */}
+                {customCardLoading && (
+                  <div className="flex items-center gap-4 rounded-2xl border border-gold-500/20 bg-gold-500/5 p-4 animate-pulse">
+                    <div className="h-12 w-12 flex-shrink-0 rounded-xl" style={{ background: "rgba(212,160,23,0.1)" }} />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-20 rounded" style={{ background: "rgba(212,160,23,0.15)" }} />
+                      <div className="h-4 w-3/4 rounded" style={{ background: "rgba(212,160,23,0.1)" }} />
+                      <div className="h-3 w-1/2 rounded" style={{ background: "rgba(212,160,23,0.07)" }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Generated custom card */}
+                {customCard && !customCardLoading && (
+                  <CustomOptionCard
+                    option={customCard}
+                    isSelected={selectedId === "custom"}
+                    onSelect={() => onSelect("custom")}
+                    onClear={onClearCustomCard}
+                  />
+                )}
+
+                {/* Text input — shown when no custom card and no pending point */}
+                {!pendingMapPoint && !customCardLoading && !customCard && (
+                  <>
+                    <CustomLocationInput onSubmit={onCustomSubmit} />
+                    <p className="text-center text-xs text-forest-700">or click anywhere on the map to pin a spot</p>
+                  </>
+                )}
+              </div>
+
+              {/* Confirm button */}
               {selectedId && (
                 <button
                   type="button"
                   onClick={onConfirm}
                   className="mt-1 w-full rounded-xl bg-gold-500 py-3.5 text-sm font-semibold text-forest-950 hover:bg-gold-400 hover:shadow-lg hover:shadow-gold-500/20 transition-all cursor-pointer animate-slide-up"
                 >
-                  {step.is_final_step ? "Build my itinerary →" : `Lock in Day ${currentDay} →`}
+                  {step.is_final_step
+                    ? "Build my itinerary →"
+                    : selectedId === "custom" && customCard
+                    ? `Lock in ${customCard.next_location} →`
+                    : `Lock in Day ${currentDay} →`}
                 </button>
               )}
             </>
@@ -712,9 +864,14 @@ function BuildingPhase({
         <div className="hidden md:block relative">
           <TripMap
             choices={choicesMade}
-            currentOptions={step?.options ?? []}
+            currentOptions={[
+              ...(step?.options ?? []),
+              ...(customCard ? [customCard] : []),
+            ]}
             hoveredOptionId={hoveredId}
             selectedOptionId={selectedId}
+            onMapClick={onMapClick}
+            pendingPoint={pendingMapPoint}
           />
         </div>
       </div>
@@ -778,5 +935,101 @@ function OptionCard({
         {isSelected ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : option.id.toUpperCase()}
       </div>
     </button>
+  );
+}
+
+// ── Custom option card ────────────────────────────────────────────────────────
+
+function CustomOptionCard({
+  option, isSelected, onSelect, onClear,
+}: {
+  option: CardOption;
+  isSelected: boolean;
+  onSelect: () => void;
+  onClear: () => void;
+}) {
+  const config = SEGMENT[option.segment_type] ?? DEFAULT_SEG;
+  const Icon = config.icon;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={onSelect}
+        className={[
+          "w-full flex items-center gap-4 rounded-2xl p-4 text-left transition-all duration-200 cursor-pointer ring-2",
+          isSelected
+            ? "ring-gold-400 shadow-lg shadow-gold-500/20 scale-[1.01]"
+            : "ring-gold-500/40 hover:ring-gold-500/70",
+        ].join(" ")}
+        style={{ background: isSelected ? config.gradient : "rgba(212,160,23,0.06)" }}
+      >
+        <div className="flex-none flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: "rgba(0,0,0,0.25)" }}>
+          <Icon className={`h-6 w-6 text-cream-200 ${config.iconClass ?? ""}`} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-semibold text-gold-400 uppercase tracking-wide">Your Pick</span>
+            <span className="text-forest-700 text-xs">·</span>
+            <span className="text-xs text-forest-400 tabular-nums">{option.duration_hours}h</span>
+          </div>
+          <p className="font-serif font-semibold text-cream-100 leading-snug line-clamp-2">{option.title}</p>
+          <p className="text-xs text-forest-400 mt-1 line-clamp-2 leading-relaxed">{option.description}</p>
+        </div>
+
+        <div className={[
+          "flex-none flex h-7 w-7 items-center justify-center rounded-full transition-all",
+          isSelected ? "bg-gold-500 text-forest-900" : "bg-gold-500/15 text-gold-400",
+        ].join(" ")}>
+          {isSelected
+            ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+            : <Star className="h-3.5 w-3.5" fill="currentColor" />}
+        </div>
+      </button>
+
+      {/* Dismiss button */}
+      {!isSelected && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onClear(); }}
+          className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full border border-forest-700 bg-forest-800 text-forest-500 transition-all hover:bg-forest-700 hover:text-cream-200 cursor-pointer z-10"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Custom location text input ────────────────────────────────────────────────
+
+function CustomLocationInput({ onSubmit }: { onSubmit: (location: string) => void }) {
+  const [value, setValue] = useState("");
+
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    onSubmit(trimmed);
+    setValue("");
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex items-center gap-2">
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Have somewhere in mind? e.g. Astoria, OR"
+        className="flex-1 rounded-xl border border-forest-700/60 bg-forest-900/30 px-4 py-2.5 text-sm text-cream-100 placeholder:text-forest-600 outline-none focus:border-gold-500/60 focus:ring-1 focus:ring-gold-500/20 transition-all"
+      />
+      <button
+        type="submit"
+        disabled={!value.trim()}
+        className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-gold-500/30 bg-gold-500/10 text-gold-400 transition-all hover:bg-gold-500/20 hover:text-gold-300 disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+      >
+        <ArrowRight className="h-4 w-4" />
+      </button>
+    </form>
   );
 }

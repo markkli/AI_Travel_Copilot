@@ -195,6 +195,25 @@ export function suggestAlternatives(
   });
 }
 
+export type CustomCardPayload = {
+  destination: string;
+  custom_location: string;
+  day_number: number;
+  trip_days: number;
+  budget_level?: string;
+  vibes?: string[];
+  choices_made?: ChoiceMade[];
+  lat?: number | null;
+  lng?: number | null;
+};
+
+export function generateCustomCard(payload: CustomCardPayload): Promise<CardOption> {
+  return requestJson<CardOption>("/trip/custom-card", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function refineTrip(existingItinerary: TripPlan, userFeedback: string): Promise<TripPlan> {
   return requestJson<TripPlan>("/trip/refine", {
     method: "POST",

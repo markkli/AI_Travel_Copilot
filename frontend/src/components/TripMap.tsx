@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -62,6 +62,19 @@ function optionMarker(active: boolean): L.DivIcon {
   );
 }
 
+// Pending map pin — dashed ring, signals "click to confirm"
+const pendingPinMarker = divIcon(
+  `<div style="
+    width:28px;height:28px;border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    border:2px dashed rgba(255,255,255,0.55);
+    box-shadow:0 0 0 5px rgba(255,255,255,0.05);
+    display:flex;align-items:center;justify-content:center;
+    color:rgba(255,255,255,0.65);font-size:15px;line-height:1;
+  ">+</div>`,
+  28,
+);
+
 // ── Auto-fit bounds ───────────────────────────────────────────────────────────
 
 function FitBounds({ positions }: { positions: [number, number][] }) {
@@ -82,6 +95,17 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
   return null;
 }
 
+// ── Map click handler ─────────────────────────────────────────────────────────
+
+function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 type TripMapProps = {
@@ -89,9 +113,14 @@ type TripMapProps = {
   currentOptions: CardOption[];
   hoveredOptionId: string | null;
   selectedOptionId: string | null;
+  onMapClick?: (lat: number, lng: number) => void;
+  pendingPoint?: { lat: number; lng: number } | null;
 };
 
-export default function TripMap({ choices, currentOptions, hoveredOptionId, selectedOptionId }: TripMapProps) {
+export default function TripMap({
+  choices, currentOptions, hoveredOptionId, selectedOptionId,
+  onMapClick, pendingPoint,
+}: TripMapProps) {
   const chosenPositions: [number, number][] = choices
     .filter((c) => c.lat !== 0 || c.lng !== 0)
     .map((c) => [c.lat, c.lng]);
@@ -102,6 +131,7 @@ export default function TripMap({ choices, currentOptions, hoveredOptionId, sele
   const allPositions: [number, number][] = [
     ...chosenPositions,
     ...validOptions.map((o): [number, number] => [o.lat, o.lng]),
+    ...(pendingPoint ? [[pendingPoint.lat, pendingPoint.lng] as [number, number]] : []),
   ];
 
   const lastChosen = chosenPositions[chosenPositions.length - 1];
@@ -122,6 +152,7 @@ export default function TripMap({ choices, currentOptions, hoveredOptionId, sele
       />
 
       <FitBounds positions={allPositions.length > 0 ? allPositions : [[20, 0]]} />
+      {onMapClick && <MapClickHandler onClick={onMapClick} />}
 
       {/* Chosen route line */}
       {chosenPositions.length > 1 && (
@@ -162,6 +193,14 @@ export default function TripMap({ choices, currentOptions, hoveredOptionId, sele
           icon={optionMarker(opt.id === activeId)}
         />
       ))}
+
+      {/* Pending pin from map click */}
+      {pendingPoint && (
+        <Marker
+          position={[pendingPoint.lat, pendingPoint.lng]}
+          icon={pendingPinMarker}
+        />
+      )}
     </MapContainer>
   );
 }

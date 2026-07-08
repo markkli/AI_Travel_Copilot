@@ -84,3 +84,15 @@ class AlternativeSegmentsRequest(BaseModel):
 
 class AlternativeSegmentsResponse(BaseModel):
     alternatives: list[AlternativeSegment] = Field(min_length=2, max_length=4)
+
+
+class CustomCardRequest(BaseModel):
+    destination: str
+    custom_location: str
+    day_number: int
+    trip_days: int
+    budget_level: str = "medium"
+    vibes: list[str] = Field(default_factory=list)
+    choices_made: list[ChoiceMade] = Field(default_factory=list)
+    lat: float | None = None
+    lng: float | None = None

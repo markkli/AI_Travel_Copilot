@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { MapPin, Compass, Users, Sparkles, Wand2 } from "lucide-react";
+import { Compass, Users, Sparkles, Wand2 } from "lucide-react";
 
 import TripBuilderPage from "./pages/TripBuilderPage";
 import HomePage from "./pages/HomePage";
@@ -32,10 +32,10 @@ function NavHeader() {
         {/* Logo — always flush left */}
         <Link to="/" className="flex items-center gap-2.5 flex-none">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-forest-900 dark:bg-gold-500/15 ring-1 ring-forest-900/10 dark:ring-gold-500/30">
-            <MapPin className="h-4 w-4 text-cream-100 dark:text-gold-400" strokeWidth={2} />
+            <Compass className="h-4 w-4 text-cream-100 dark:text-gold-400" strokeWidth={2} />
           </div>
           <span className="font-serif text-lg font-semibold text-forest-900 dark:text-cream-100 whitespace-nowrap">
-            AI Travel Copilot
+            Lopan
           </span>
         </Link>
 

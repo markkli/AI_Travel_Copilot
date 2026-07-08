@@ -3,6 +3,7 @@ from app.core.config import Settings, get_settings
 from app.schemas.card import (
     CardOption, CardStep, CardStepLLM, CardOptionLLM, NextCardsRequest,
     AlternativeSegment, AlternativeSegmentsRequest, AlternativeSegmentsResponse,
+    CustomCardRequest,
 )
 from app.schemas.common import BudgetLevel, SegmentType
 from app.schemas.trip import GenerateTripRequest, TripDraftRequest, TripIntent, TripPlan
@@ -528,6 +529,71 @@ class LLMService:
                     cost_estimate="$15–30",
                 ),
             ]
+        )
+
+    # ── Custom card ───────────────────────────────────────────────────────────
+
+    def generate_custom_card(self, request: CustomCardRequest) -> CardOption:
+        if self.settings.llm_mode == "openai":
+            return self._custom_card_with_openai(request)
+        return self._mock_custom_card(request)
+
+    def _custom_card_with_openai(self, request: CustomCardRequest) -> CardOption:
+        if not self.settings.openai_api_key:
+            raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
+
+        from openai import OpenAI
+
+        choices_summary = ""
+        if request.choices_made:
+            choices_summary = "\nDays already planned:\n" + "\n".join(
+                f"  Day {c.step}: {c.title} → {c.next_location}" for c in request.choices_made
+            )
+
+        system_prompt = (
+            "You are a travel planning assistant. "
+            "Generate a single full-day experience card for a specific location chosen by the traveler. "
+            "The card must describe a compelling day at that exact location using real place names. "
+            "Provide accurate coordinates for that location."
+        )
+        user_prompt = (
+            f"Trip destination: {request.destination}"
+            + f"\nDay {request.day_number} of {request.trip_days}"
+            + f"\nTraveler's chosen location: {request.custom_location}"
+            + f"\nBudget: {request.budget_level}"
+            + (f"\nVibes: {', '.join(request.vibes)}" if request.vibes else "")
+            + choices_summary
+            + f"\n\nGenerate a compelling full-day experience at {request.custom_location}."
+        )
+
+        client = OpenAI(api_key=self.settings.openai_api_key)
+        completion = client.beta.chat.completions.parse(
+            model=self.settings.openai_normalization_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format=CardOptionLLM,
+        )
+        result = completion.choices[0].message.parsed
+        if result is None:
+            raise ValueError("Custom card generation returned no result")
+
+        lat = request.lat if request.lat is not None else result.lat
+        lng = request.lng if request.lng is not None else result.lng
+        return CardOption(**{**result.model_dump(), "id": "custom", "lat": lat, "lng": lng})
+
+    def _mock_custom_card(self, request: CustomCardRequest) -> CardOption:
+        return CardOption(
+            id="custom",
+            title=f"Your day in {request.custom_location}",
+            description=f"A day exploring {request.custom_location} on your own terms — local finds, hidden gems, and your own pace.",
+            segment_type=SegmentType.ACTIVITY,
+            duration_hours=9.0,
+            next_location=request.custom_location,
+            lat=request.lat or 0.0,
+            lng=request.lng or 0.0,
+            tags=["custom", "your pick"],
         )
 
     # ── Helpers ───────────────────────────────────────────────────────────────
