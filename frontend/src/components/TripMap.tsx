@@ -141,14 +141,14 @@ export default function TripMap({
       center={[20, 0]}
       zoom={2}
       zoomControl={false}
-      attributionControl={false}
+      attributionControl={true}
       className="h-full w-full"
-      style={{ background: "#0c1510" }}
+      style={{ background: "#0d1117" }}
     >
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        subdomains="abcd"
-        maxZoom={19}
+        url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+        maxZoom={20}
+        attribution='&copy; <a href="https://stadia.maps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
       />
 
       <FitBounds positions={allPositions.length > 0 ? allPositions : [[20, 0]]} />

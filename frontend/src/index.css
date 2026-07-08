@@ -1,0 +1,11 @@
+
+/* Blend Leaflet attribution into dark map */
+.leaflet-control-attribution {
+  background: rgba(0,0,0,0.45) !important;
+  color: rgba(255,255,255,0.35) !important;
+  font-size: 9px !important;
+  padding: 1px 5px !important;
+}
+.leaflet-control-attribution a {
+  color: rgba(255,255,255,0.45) !important;
+}
