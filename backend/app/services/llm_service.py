@@ -1,4 +1,10 @@
 from datetime import date, timedelta
+
+try:
+    from openai import OpenAI as _OpenAIClient
+except ImportError:
+    _OpenAIClient = None  # type: ignore[assignment,misc]
+
 from app.core.config import Settings, get_settings
 from app.schemas.card import (
     CardOption, CardStep, CardStepLLM, CardOptionLLM, NextCardsRequest,
@@ -29,7 +35,7 @@ class LLMService:
         if not self.settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
 
-        from openai import OpenAI
+        OpenAI = _OpenAIClient
 
         client = OpenAI(api_key=self.settings.openai_api_key)
         completion = client.beta.chat.completions.parse(
@@ -116,7 +122,7 @@ class LLMService:
         if not self.settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
 
-        from openai import OpenAI
+        OpenAI = _OpenAIClient
 
         client = OpenAI(api_key=self.settings.openai_api_key)
         completion = client.beta.chat.completions.parse(
@@ -346,7 +352,7 @@ class LLMService:
         if not self.settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
 
-        from openai import OpenAI
+        OpenAI = _OpenAIClient
 
         trip_days = (request.end_date - request.start_date).days + 1
         target_steps = trip_days  # one decision per day
@@ -466,7 +472,7 @@ class LLMService:
         if not self.settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
 
-        from openai import OpenAI
+        OpenAI = _OpenAIClient
 
         client = OpenAI(api_key=self.settings.openai_api_key)
         system_prompt = (
@@ -542,7 +548,7 @@ class LLMService:
         if not self.settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY must be set when LLM_MODE=openai")
 
-        from openai import OpenAI
+        OpenAI = _OpenAIClient
 
         choices_summary = ""
         if request.choices_made:
