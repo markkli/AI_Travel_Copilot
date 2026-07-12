@@ -11,11 +11,11 @@ sleep 1
 
 echo ""
 echo "🚀  Starting backend (port 8000)..."
-osascript -e "tell application \"Terminal\" to do script \"cd '$SCRIPT_DIR/backend' && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000\""
+osascript -e "tell application \"Terminal\" to do script \"cd '$SCRIPT_DIR/backend' && source .venv/bin/activate && uvicorn app.main:app --port 8000\""
 
 echo "🌐  Starting frontend (port 5173)..."
-osascript -e "tell application \"Terminal\" to do script \"cd '$SCRIPT_DIR/frontend' && npm run dev\""
+osascript -e "tell application \"Terminal\" to do script \"cd '$SCRIPT_DIR/frontend' && npm run dev -- --host 127.0.0.1\""
 
 echo ""
-echo "✅  Done. Open http://localhost:5173 in your browser."
+echo "✅  Done. Open http://127.0.0.1:5173 in your browser."
 echo "    (Give the backend ~5s to finish starting.)"
