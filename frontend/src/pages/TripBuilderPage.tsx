@@ -429,7 +429,10 @@ export default function TripBuilderPage() {
               </div>
             </div>
           ) : (
-            <GenerationStatus steps={genSteps} />
+            <>
+              <GenerationStatus steps={genSteps} />
+              <AssemblingNote />
+            </>
           )}
         </div>
       )}
@@ -440,6 +443,24 @@ export default function TripBuilderPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Assembling note ───────────────────────────────────────────────────────────
+
+function AssemblingNote() {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+  return (
+    <p className="mt-4 text-center text-xs text-forest-500 dark:text-forest-500 animate-fade-in">
+      AI is writing your full itinerary — this takes 60–90 seconds&nbsp;&nbsp;·&nbsp;&nbsp;{timeStr}
+    </p>
   );
 }
 
